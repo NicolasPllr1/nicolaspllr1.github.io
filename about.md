@@ -7,6 +7,11 @@ titles:
   en-CA   : *EN
   en-AU   : *EN
   fr      : &FR       À propos
+  fr-BE   : *FR
+  fr-CA   : *FR
+  fr-CH   : *FR
+  fr-FR   : *FR
+  fr-LU   : *FR
 key: page-about
 ---
 
