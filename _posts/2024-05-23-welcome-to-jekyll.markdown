@@ -1,29 +1,310 @@
 ---
-layout: post
-title:  "Welcome to Jekyll!"
-date:   2024-05-23 13:44:05 +0200
-categories: jekyll update
+layout: article
+title: What is quantization in modern AI ?
+aside:
+  toc: true
+date:   2024-05-23
+categories: quantization
 ---
-You’ll find this post in your `_posts` directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run `jekyll serve`, which launches a web server and auto-regenerates your site when a file is updated.
 
-Jekyll requires blog post files to be named according to the following format:
+![Cute llama lifting weights - courtesy of DALL-E 3](/assets/img/cute_llama.webp){:width="512px" height="512px"}
 
-`YEAR-MONTH-DAY-title.MARKUP`
+## Quantization - AI's weight loss plan
 
-Where `YEAR` is a four-digit number, `MONTH` and `DAY` are both two-digit numbers, and `MARKUP` is the file extension representing the format used in the file. After that, include the necessary front matter. Take a look at the source for this post to get an idea about how it works.
+'Quantization' refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
 
-Jekyll also offers powerful support for code snippets:
+Consider the new Llama 3 70B.
 
-{% highlight ruby %}
-def print_hi(name)
-  puts "Hi, #{name}"
-end
-print_hi('Tom')
-#=> prints 'Hi, Tom' to STDOUT.
-{% endhighlight %}
+If you load it in 32-bit precision on your GPU [^1], it will require around (32 / 8) * 70 = 280 GB of VRAM 🥶. For regular folks with access to 1 or 2 consumer GPUs at best, this memory cost is prohibitive and the model cannot be run [^2].
 
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
+This is where quantization kicks in to lower the memory required to run models.
 
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+Before we dive into data types, memory footprint calculations and specific quantization algorithms such as GPTQ, AWQ or HQQ, let's understand why quantization in particular and model compression in general have become critical in modern AI.
+
+### Plus-size AI
+
+AI models have been getting larger and larger.
+
+Epoch AI has a nice paper exploring this trend + their dataset is regularly updated. Look at the evolution of the parameter count from 1950 to 2024 :
+
+From Epoch AI paper
+
+Pay attention to the y-axis log scale. It indicates the parameter count order of magnitude - OOM. Notice how the slope is increasing.  On this figure, every vertical increment represent a gain of a full order of magnitude !
+
+Meaning across the board,  models have been gaining orders of magnitudes more parameters and this increase in size has been accelerating
+
+#### Natural language processing
+
+Consider the GPT series trained by OpenAI :
+
+![GPTs timeline](/assets/img/GPTs_timelmine_summary.png)
+
+Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog post.
+
+Gaining 3 OOMs was achieved in ~ 2 years.
+
+![GPTs sizes](/assets/img/gpt_series_OOMs_screen.png)
+
+Mid 2018, OpenAI released GPT-1 with ~100M params [^3]. Next in 2019, they progressively released the GPT-2 models. The largest GPT-2 at 1.5B params was 10x larger than GPT-1 . Next mid 2020 they announced GPT-3 - but did not release the weights this time 😢 - with an outstanding size of 175B parameters. Meaning ~100x GPT-2 size and 10x larger than any dense model at the time. Finally in March 2024 they announced GPT-4. Although this time they did not publicly disclose its architecture, it is rumored to be a 1.7T MoE so again a 10x increase in size compared to GPT-3 [^4].
+
+And it's not just OpenAI’s GPTs. This trend can be observed across the board in the modern NLP history :  
+
+(landmark model : its parameter count)
+
+- 1997, original LSTM : ~10k
+
+- 2014, Seq2Seq LSTM : ~400M
+
+- 2017, original Transformer : ~200M
+
+- 2018, BERT : base model at 110M and the large at 340M.
+
+- early 2023, Llama 1 : 7B, 13B, 33B, and 65B
+
+- summer 2023, Llama 2 : 7B, 13B and 70B
+
+- April 2024, Llama 3 : 8B, 70B and the 400B (!) version announced but not released yet
+
+In 2024, almost all models have a parameter count in the billions ! Models having less than 10 billions parameters are often considered "small"  ! For instance, the release of llama 3 8B has been much appreciated as its size makes it relatively small in the modern context of LLMs and it has been trained a lot. Making smaller models more capable is a recent trend that seems to be gaining traction. Andrej Karpathy for one has been pushing for smaller yet capable models and the recent Phi-3 model drives in this direction.
+
+#### Computer vision
+
+Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —>AlexNet —> ResNets, YOLOs —> ViTs
+
+![Landmark models in computer vision - timeline](/assets/img/landmark_models_cv_screen.png)
+
+Timeline I made. See the increasing number of parameters :)
+
+In short, models sizes across the board in the AI landscape have been exploding.     And why you may ask ?
+
+### Why ?
+
+One major force that is driving this explosion is scaling laws.
+
+I won't deep dive into this fascinating topic here - maybe in a future post :) .
+
+If you want to get started, EpochAI literature review looks great [^5].
+
+On a personal note, I would recommend paper-wise reading OpenAI's 2020 publications where they study scaling laws for GPTs performing language modeling up to 1B models, and then explore how their findings generalize to other AI tasks.
+
+![OpenAI scaling laws - power law](/assets/img/openAI_power_laws.png)
+
+Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above
+
+Finally, the 2022 Chinchilla paper which provides more precise scaling laws than OpenAI's and estimates “compute optimal” training recipes.
+
+And obviously you should read Dwarkesh awesome article on scaling laws. Many many incredible pointers/references/ideas well-articulated and communicated in this piece written as a dialogue.
+
+## The costs of size
+
+Okay, models are huge. How is it a problem ?
+
+—> Training and inference costs increase with model size.
+
+With crazy scale comes crazy numbers
+
+There are several costs to consider. Some a causally linked like computation and energy.
+
+Costs to consider when training / running AI models :
+
+- Memory to load models
+
+- FLOPs to train or run inferences ~ energy, latency, throughput
+
+- Cluster maintenance becomes a challenge ~ infrastructure, skills, time
+
+The larger the model the more ressources are needed to both train and simply run an inference. In terms of computation, costs for a single pass of training and or a single batch of inference are roughly [^6] proportional to the model size i.e its parameter count.
+
+Mental model on “compute” :
+
+See below the consequence of larger models (and larger training datasets) on compute costs :
+
+![EpochAI compute trend figure](/assets/img/compute-trends.png)
+
+Compute is driven by model and dataset sizes (source : Epoch AI <3)
+
+The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the llama 2 paper, the training of the Llama 2 series required  3,311,616 > 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —> think a cluster of 6,000 A100s working full-time for 12 days.
+
+Karpathy in his intro talk to LLMs, these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …
+
+![Screenshot from Karpathy's video - llama2 rookie numbers](/assets/img/karpathy_llama2_rookie_numbers.png)
+
+Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”
+
+Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs [^7]. Maintaining the good health of such clusters becomes a technical challenge as discussed here for example.
+
+Estimating memory requirement. As a first estimation :
+
+Straightforward : to load the model, you have to load every parameters. Thus memory required is the sum of the memory required to load a single parameter.
+
+How can we know the memory requirement of a single weight ? This is directly related to the “precision” chosen to represent this number in the computer. In scientific computing where a lot of precision is needed, real number are often represented with 64 bits. In Machine learning, it’s often 32 bits as this is already sufficient.
+
+I will not dive into the specifics of representing numbers in the computer here. This will be the topic of the next section. But knowing how many bits are used to store a single parameter, one can easy convert this to a number of bytes - 1 bytes = 8 bits. Finally, 1 billion bytes is exactly 1 GB. Given that models are often in the billions of parameters in size, you can easily estimate the memory requirement to hold the entire model in memory (be it the disk, the RAM or a GPU memory).
+
+## Model compression via quantization
+
+### General idea
+
+Model are getting larger and larger. On the one hand, larger sizes are driving AI progress. On the other hand,  larger sizes come with costs :
+
+- Loading models requires a lot of memory
+
+- Running/training models requires doing a ton of compute - FLOPs
+
+- Memory and compute being fundamentally related to energy - and as a consequence money.
+
+In order to benefit from powerful AI while diminishing the costs, one could try to compress models. The idea is would be to attack the problem at its root : model sizes.
+
+### LLMs as an example
+
+As Andrej Karpathy so clearly summarizes, LLMs are lossy compressions of their training dataset. This is true in general in AI where one can think of models as big curves fitted on a dataset - think polynomial interpolation - François Chollet explains this all the time, here for instance. Thus data is compressed into the model through its parameters and computation graph.
+
+Given all the general knowledge that models encapsulate - think your experience with chatGPT - you may believe that this compression is extremely precise and that tweaking a couple of parameters may throw everything off …
+
+However this is absolutely not the case.
+
+Among the billions of parameters, many if not most are rarely being activated and their contribution to performance - next word prediction for instance - is very negligible.
+
+The extent to which some parameters are negligible can be quantified and one may try to simply remove these negligible weights. By removing useless parameters, models get lighter. This process is called pruning. Pruning - individual weights or even entire layers -  is one class of compression algorithm. Quantization is another one.
+
+Quantization algorithms typically do not remove weights nor layers directly. The structure of the model stays the same. The number of parameters stays the same.
+
+What is going to change is how much memory is used to store each weight.
+
+### First example : naïve 32-bit —> 16-bit
+
+The specifics of data types and how numbers are stored will be covered in the next section. For now, accept that numbers in a computer can be stored and used in computation using either :
+
+- 32 bits = 4 bytes of memory per number
+
+- 16 bits = 2 bytes of memory per number
+
+Usually, AI models will have their parameters represented in the computer using the 1st method : 32-bit precision. This allow for very precise calculations as we will explore in the next section.
+
+However, this precision may not be needed to run models. Let’s try to convert a model from 32-bit precision to 16-bit precision.
+
+—> As we cut off memory requirement by half for each parameter, the memory requirement for the model as a whole will also be slashed in half.
+
+``` python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+torch.manual_seed(2)
+
+# Simple quantization algo on a "small" gpt-2 --> gpu not needed
+device = "cpu" 
+
+# load model and its tokenizer (in ram)
+model_id = "gpt2"
+model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+print("--------------------------------")
+print("What's the model size in (mega)bytes ?")
+
+model_size_in_bytes = model.get_memory_footprint()
+print(f"Model memory footprint : {model_size_in_bytes/1e6:.2f} MB")
+
+print("---------------------------------------------------------")
+print("Quantizing 32-bit --> 16-bit the first layer of the model")
+
+# extract the first layer weights (cf Maxime Labonne's article code example)
+weights = model.transformer.h[0].attn.c_attn.weight.data
+# Layer size in bytes
+layer_size_in_bytes = weights.element_size() * weights.nelement()
+
+print(f"Original layer memory footprint : {layer_size_in_bytes/1e6:.2f} MB")
+print(f"Original data type : {weights.dtype}")
+print("Original weights: \n", weights)
+
+# 32-bit --> 16-bit
+weights_q = weights.to(torch.float16)
+# Lighter layer : size cut in half ?
+new_layer_size_bytes = weights_q.element_size() * weights_q.nelement()
+
+print(f"Quantized layer memory footprint : {new_layer_size_bytes/1e6:.2f} MB")
+print(f"New data type : {weights_q.dtype}")
+print("New quantized weights: \n", weights)
+
+
+print("---------------------------------------------")
+print("Quantizing 32-bit --> 16-bit the entire model ")
+
+# Layer by layer quantization
+for layer in model.parameters():
+    layer.data = layer.data.to(torch.float16)
+
+# New model memory footprint
+print("What's the quantized model size in (mega)bytes ?")
+new_memory_footprint_bytes = model.get_memory_footprint()
+print(f"Quantized model memory footprint : {new_memory_footprint_bytes/1e6:.2f} MB")
+```  
+
+``` terminal
+
+--------------------------------
+
+What's the model size in (mega)bytes ?
+Model memory footprint : 510.34 MB
+
+---------------------------------------------------------
+Quantizing 32-bit --> 16-bit the first layer of the model
+
+Original layer memory footprint : 7.08 MB
+Original data type : torch.float32
+Original weights: 
+ tensor([[-0.4738, -0.2614, -0.0978,  ...,  0.0513, -0.0584,  0.0250],
+        [ 0.0874,  0.1473,  0.2387,  ..., -0.0525, -0.0113, -0.0156],
+        [ 0.0039,  0.0695,  0.3668,  ...,  0.1143,  0.0363, -0.0318],
+        ...,
+        [-0.2592, -0.0164,  0.1991,  ...,  0.0095, -0.0516,  0.0319],
+        [ 0.1517,  0.2170,  0.1043,  ...,  0.0293, -0.0429, -0.0475],
+        [-0.4100, -0.1924, -0.2400,  ..., -0.0046,  0.0070,  0.0198]])
+
+Quantized layer memory footprint : 3.54 MB
+New data type : torch.float16
+New quantized weights: 
+ tensor([[-0.4738, -0.2614, -0.0978,  ...,  0.0513, -0.0584,  0.0250],
+        [ 0.0874,  0.1473,  0.2387,  ..., -0.0525, -0.0113, -0.0156],
+        [ 0.0039,  0.0695,  0.3668,  ...,  0.1143,  0.0363, -0.0318],
+        ...,
+        [-0.2592, -0.0164,  0.1991,  ...,  0.0095, -0.0516,  0.0319],
+        [ 0.1517,  0.2170,  0.1043,  ...,  0.0293, -0.0429, -0.0475],
+        [-0.4100, -0.1924, -0.2400,  ..., -0.0046,  0.0070,  0.0198]])
+
+---------------------------------------------
+Quantizing 32-bit --> 16-bit the entire model 
+
+What's the quantized model size in (mega)bytes ?
+Quantized model memory footprint : 261.46 MB
+
+```  
+
+This piece of code shows you how you can very easily download a model locally on your machine from the Hugging Face hub. Then, you can built-in utils from the transformers and torch librairies to look at the model size in bytes.
+
+Initially, weights are stored in the computer using 32 bits. This code forces the weights from 32 bits to a 16 bits representation in memory. This would be analogous to truncating a number in physics to account for the significance of digits. Essentially, we are saying
+
+for every parameters of the model. More or less truncating the “precision” by half [^8]. See how you don’t even notice the change in precision with the prints ! But still, precision has been diminished.
+
+How is the performance affected ? Let’s try to benchmark this with :
+
+- Qualitative evaluation with a simple inference on a given prompt
+
+- Quantitative measurement of “next token prediction” with the model perplexity on a given dataset
+
+
+[^1]: N-bit precision and memory footprint calculation will be explained later in the post. Basically, each parameter requires 32 bits / 8 bits per byte = 4 bytes of memory. Thus 70 billions of such parameters amount to 70B * 4 bytes = 280 GB of memory.
+
+[^2]: Considering a “simple” run where on tries to load the entire model in a single GPU at once. However there are many tactics to run larger model on a GPU than one would expect given the amount of VRAM available (for instance off-loading some layers onto the RAM or even the disk to alleviate the memory pressure on the GPU)
+
+[^3]: "117M" ? Given gpt2 x10 gpt1, must be ~100M
+
+[^4]: Big caveat here as we are not comparing apples to apples. GPT-1, 2 and 3 are  'dense'  as opposed to the 'sparse' MoE architecture   that GPT-4 is believed to be. Same  kind of architecture than the popular Mixtrals for instance, where only a subset of all the weights are active in a given inference round.
+
+[^5]: I have not read it thoroughly. I just discovered it while writing this post. But as always with EpochAI work it looks great.
+
+[^6]: The specifics depends on your training/inference strategy.
+
+[^7]: 2 clusters of 24 000 GPU. See llama 3 introduction post  (section “Scaling up pretraining”).
+
+[^8]: How the precision is affected depends on how you use your 32 or 16 bits. More on that in the data type section.

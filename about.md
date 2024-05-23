@@ -15,8 +15,9 @@ titles:
 key: page-about
 ---
 
+# Hello
+
+**Hello**, *just* trying basic markdown features.
 Just say something about yourself. :+1:
 
-{% highlight javascript %}
-(() => console.log('hello, world!'))();
-{% endhighlight %}
+`A test, green ?`{:.success}
