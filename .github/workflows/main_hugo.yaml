@@ -1,0 +1,28 @@
+name: Build and Deploy Hugo Site
+
+on:
+  push:
+    branches:
+      - main  # Set this to the branch containing your Hugo site's source files
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - name: Set up Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.91.2'  # Specify the Hugo version you are using
+
+      - name: Build Hugo site
+        run: hugo --minify  # Builds your site and minifies the output
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public  # Default Hugo output directory
