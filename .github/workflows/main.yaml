@@ -3,7 +3,7 @@ name: Build and Deploy Hugo Site
 on:
   push:
     branches:
-      - main  # Set this to the branch containing your Hugo site's source files
+      - hugo-blog  # Set this to the branch containing your Hugo site's source files
 
 jobs:
   build:
