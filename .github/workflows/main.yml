@@ -3,7 +3,7 @@ name: Build and deploy Jekyll site to GitHub Pages
 on:
   push:
     branches:
-      - main  # Adjust this as necessary for your workflow
+      - jekyll-blog  # Adjust this as necessary for your workflow
 
 jobs:
   build:
