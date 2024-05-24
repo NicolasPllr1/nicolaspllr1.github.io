@@ -32,7 +32,6 @@ Epoch AI has a nice [paper](https://epochai.org/blog/machine-learning-model-size
 
 ![Evolution of model sizes over time by EpochAI](/images/epochAI_model_sizes.png)
 
-
 Pay attention to the y-axis log scale. It indicates the parameter count order of magnitude - OOM. Notice how the slope is increasing.  On this figure, every vertical increment represent a gain of a full order of magnitude !
 
 Meaning across the board,  models have been gaining orders of magnitudes more parameters and this increase in size has been accelerating
@@ -103,6 +102,8 @@ Okay, models are huge. How is it a problem ?
 
 With crazy scale comes crazy numbers
 
+### Compute, energy, memory, etc
+
 There are several costs to consider. Some a causally linked like computation and energy.
 
 Costs to consider when training / running AI models :
@@ -135,9 +136,13 @@ Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more�
 
 Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs [^7]. Maintaining the good health of such clusters becomes a technical challenge as discussed [here for example](https://twitter.com/karpathy/status/1765424847705047247).
 
-Estimating memory requirement. As a first estimation :
+### Estimating memory requirement
 
-$$\text{Total mem. required} = \text{#params} \times \text{(mem. per param)}$$
+As a first estimation :
+
+$$
+\text{Total mem. required} = \text{\#params} \times \text{(mem. per param)}
+$$
 
 Straightforward : to load the model, you have to load every parameters. Thus memory required is the sum of the memory required to load a single parameter.
 
