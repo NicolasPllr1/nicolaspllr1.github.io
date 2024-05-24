@@ -1,0 +1,11 @@
+
+<!-- Inline JavaScript -->
+<script>
+  console.log('Custom script loaded');
+</script>
+
+{{ if (eq $.Page.Params.math "katex") }}
+  {{ partial "helpers/katex.html" . }}
+{{ else if (eq $.Page.Params.math "mathjax") }}
+  {{ partial "helpers/mathjax.html" . }}
+{{ end }}

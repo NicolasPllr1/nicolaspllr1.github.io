@@ -1,3 +1,60 @@
-baseURL: https://example.org/
+baseURL: ""
 languageCode: en-us
-title: My New Hugo Site
+title: Nicolas' Blog
+theme: ["PaperMod"]
+
+
+params:
+  # Posts params
+  ShowPostNavLinks: true
+  ShowCodeCopyButtons: true
+  ShowToc: true
+  TocOpen: true
+  ShowShareButtons: true
+  ShowReadingTime: true
+  math: mathjax # "mathjax" "katex"
+
+
+  # Home page header
+  homeInfoParams:
+    Title: Welcome to Nicolas' Blog
+    Content: AI, maths, jiu-jitsu mix
+  socialIcons:
+    - name: "GitHub"
+      url: "https://github.com/NicolasPllr1"
+    - name: "Twitter"
+      url: "https://twitter.com/nicolas_clark2"
+
+  # Search  
+  fuseOpts:
+    isCaseSensitive: false
+    shouldSort: true
+    location: 0
+    distance: 1000
+    threshold: 0.4
+    minMatchCharLength: 0
+    # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
+    keys: ["title", "permalink", "summary", "content"]
+
+
+menu:
+  main:
+    - identifier: "home"
+      name: "Home"
+      url: "/"
+      weight: 1
+
+    - identifier: "archive"
+      name: "Archive"
+      url: "/archive/"
+      weight: 2
+
+    - identifier: "search"
+      name: "Search"
+      url: "/search/"
+      weight: 3
+
+    - identifier: "about"
+      name: "About"
+      url: "/about/"
+      weight: 4

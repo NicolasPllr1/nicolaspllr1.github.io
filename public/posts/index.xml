@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Posts on Nicolas&#39; Blog</title>
+    <link>//localhost:1313/posts/</link>
+    <description>Recent content in Posts on Nicolas&#39; Blog</description>
+    <generator>Hugo -- 0.126.1</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 23 May 2024 20:31:19 +0200</lastBuildDate>
+    <atom:link href="//localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>What is quantization in modern AI ?</title>
+      <link>//localhost:1313/posts/quantization_intro/</link>
+      <pubDate>Thu, 23 May 2024 20:31:19 +0200</pubDate>
+      <guid>//localhost:1313/posts/quantization_intro/</guid>
+      <description>What is quantization ? &amp;lsquo;Quantization&amp;rsquo; refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
+$$ \text{Quantization} \sim \text{reducing the memory footprint of models} $$
+Consider the new Llama 3 70B.
+If you load it in 32-bit precision on your GPU 1, it will require around (32 / 8) * 70 = 280 GB of VRAM 🥶.</description>
+    </item>
+  </channel>
+</rss>
