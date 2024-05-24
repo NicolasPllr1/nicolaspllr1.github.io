@@ -25,7 +25,14 @@ params:
     - name: "Twitter"
       url: "https://twitter.com/nicolas_clark2"
 
+
   # Search  
+  outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON # necessary for search
+
   fuseOpts:
     isCaseSensitive: false
     shouldSort: true
@@ -44,9 +51,9 @@ menu:
       url: "/"
       weight: 1
 
-    - identifier: "archive"
-      name: "Archive"
-      url: "/archive/"
+    - identifier: "archives"
+      name: "Archives"
+      url: "/archives/"
       weight: 2
 
     - identifier: "search"
