@@ -203,7 +203,7 @@ model_id = "gpt2"
 model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-print("--------------------------------")
+print("--------------------------------------")
 print("What's the model size in (mega)bytes ?")
 
 model_size_in_bytes = model.get_memory_footprint()
@@ -245,8 +245,7 @@ print(f"Quantized model memory footprint : {new_memory_footprint_bytes/1e6:.2f} 
 ```  
 
 ``` terminal
-
---------------------------------
+--------------------------------------
 
 What's the model size in (mega)bytes ?
 Model memory footprint : 510.34 MB
@@ -284,9 +283,11 @@ Quantized model memory footprint : 261.46 MB
 
 ```  
 
-This piece of code shows you how you can very easily download a model locally on your machine from the Hugging Face hub. Then, you can built-in utils from the transformers and torch librairies to look at the model size in bytes.
+This piece of code shows you how you can very easily download a model from the Hugging Face hub to your local machine. Then, you can leverage built-in utils from the transformers and torch librairies to look at and change the model size in bytes.
 
-Initially, weights are stored in the computer using 32 bits. This code forces the weights from 32 bits to a 16 bits representation in memory. This would be analogous to truncating a number in physics to account for the significance of digits. Essentially, we are saying :
+Initially, weights are stored in the computer using 32-bit precision. This code forces the weights from 32 bits to a 16 bits representation in memory. You can see that GPT-2 orignally weights in at ~500 MB. After quantization, it's at ~250 MB - half the size as anticipated.
+
+This transition from 32-bit to 16-bit precision is analogous to truncating a number in physics to account for the significance of digits. Essentially, we are saying :
 
 $$\pi \simeq 3.141592654 \simeq 3.1415$$
 
