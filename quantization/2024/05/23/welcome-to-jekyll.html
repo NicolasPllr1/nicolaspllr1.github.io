@@ -1,0 +1,1285 @@
+<!DOCTYPE html><html lang="en">
+  <head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"><title>What is quantization in modern AI ? - Nicolas' Blog</title>
+
+<meta name="description" content="Quantization - AI’s weight loss plan‘Quantization’ refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retain...">
+<link rel="canonical" href="https://nicolaspllr1.github.io/quantization/2024/05/23/welcome-to-jekyll.html"><link rel="alternate" type="application/rss+xml" title="Nicolas' Blog" href="/feed.xml"><!-- start favicons snippet, use https://realfavicongenerator.net/ --><link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png"><link rel="manifest" href="/assets/site.webmanifest"><link rel="mask-icon" href="/assets/safari-pinned-tab.svg" color="#fc4d50"><link rel="shortcut icon" href="/assets/favicon.ico">
+
+<meta name="msapplication-TileColor" content="#ffc40d"><meta name="msapplication-config" content="/assets/browserconfig.xml">
+
+<meta name="theme-color" content="#ffffff">
+<!-- end favicons snippet --><link rel="stylesheet" href="/assets/css/main.css"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.1/css/all.css" ><!-- start custom head snippets -->
+
+<!-- end custom head snippets -->
+<script>(function() {
+  window.isArray = function(val) {
+    return Object.prototype.toString.call(val) === '[object Array]';
+  };
+  window.isString = function(val) {
+    return typeof val === 'string';
+  };
+
+  window.hasEvent = function(event) {
+    return 'on'.concat(event) in window.document;
+  };
+
+  window.isOverallScroller = function(node) {
+    return node === document.documentElement || node === document.body || node === window;
+  };
+
+  window.isFormElement = function(node) {
+    var tagName = node.tagName;
+    return tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
+  };
+
+  window.pageLoad = (function () {
+    var loaded = false, cbs = [];
+    window.addEventListener('load', function () {
+      var i;
+      loaded = true;
+      if (cbs.length > 0) {
+        for (i = 0; i < cbs.length; i++) {
+          cbs[i]();
+        }
+      }
+    });
+    return {
+      then: function(cb) {
+        cb && (loaded ? cb() : (cbs.push(cb)));
+      }
+    };
+  })();
+})();
+(function() {
+  window.throttle = function(func, wait) {
+    var args, result, thisArg, timeoutId, lastCalled = 0;
+
+    function trailingCall() {
+      lastCalled = new Date;
+      timeoutId = null;
+      result = func.apply(thisArg, args);
+    }
+    return function() {
+      var now = new Date,
+        remaining = wait - (now - lastCalled);
+
+      args = arguments;
+      thisArg = this;
+
+      if (remaining <= 0) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+        lastCalled = now;
+        result = func.apply(thisArg, args);
+      } else if (!timeoutId) {
+        timeoutId = setTimeout(trailingCall, remaining);
+      }
+      return result;
+    };
+  };
+})();
+(function() {
+  var Set = (function() {
+    var add = function(item) {
+      var i, data = this._data;
+      for (i = 0; i < data.length; i++) {
+        if (data[i] === item) {
+          return;
+        }
+      }
+      this.size ++;
+      data.push(item);
+      return data;
+    };
+
+    var Set = function(data) {
+      this.size = 0;
+      this._data = [];
+      var i;
+      if (data.length > 0) {
+        for (i = 0; i < data.length; i++) {
+          add.call(this, data[i]);
+        }
+      }
+    };
+    Set.prototype.add = add;
+    Set.prototype.get = function(index) { return this._data[index]; };
+    Set.prototype.has = function(item) {
+      var i, data = this._data;
+      for (i = 0; i < data.length; i++) {
+        if (this.get(i) === item) {
+          return true;
+        }
+      }
+      return false;
+    };
+    Set.prototype.is = function(map) {
+      if (map._data.length !== this._data.length) { return false; }
+      var i, j, flag, tData = this._data, mData = map._data;
+      for (i = 0; i < tData.length; i++) {
+        for (flag = false, j = 0; j < mData.length; j++) {
+          if (tData[i] === mData[j]) {
+            flag = true;
+            break;
+          }
+        }
+        if (!flag) { return false; }
+      }
+      return true;
+    };
+    Set.prototype.values = function() {
+      return this._data;
+    };
+    return Set;
+  })();
+
+  window.Lazyload = (function(doc) {
+    var queue = {js: [], css: []}, sources = {js: {}, css: {}}, context = this;
+    var createNode = function(name, attrs) {
+      var node = doc.createElement(name), attr;
+      for (attr in attrs) {
+        if (attrs.hasOwnProperty(attr)) {
+          node.setAttribute(attr, attrs[attr]);
+        }
+      }
+      return node;
+    };
+    var end = function(type, url) {
+      var s, q, qi, cbs, i, j, cur, val, flag;
+      if (type === 'js' || type ==='css') {
+        s = sources[type], q = queue[type];
+        s[url] = true;
+        for (i = 0; i < q.length; i++) {
+          cur = q[i];
+          if (cur.urls.has(url)) {
+            qi = cur, val = qi.urls.values();
+            qi && (cbs = qi.callbacks);
+            for (flag = true, j = 0; j < val.length; j++) {
+              cur = val[j];
+              if (!s[cur]) {
+                flag = false;
+              }
+            }
+            if (flag && cbs && cbs.length > 0) {
+              for (j = 0; j < cbs.length; j++) {
+                cbs[j].call(context);
+              }
+              qi.load = true;
+            }
+          }
+        }
+      }
+    };
+    var load = function(type, urls, callback) {
+      var s, q, qi, node, i, cur,
+        _urls = typeof urls === 'string' ? new Set([urls]) : new Set(urls), val, url;
+      if (type === 'js' || type ==='css') {
+        s = sources[type], q = queue[type];
+        for (i = 0; i < q.length; i++) {
+          cur = q[i];
+          if (_urls.is(cur.urls)) {
+            qi = cur;
+            break;
+          }
+        }
+        val = _urls.values();
+        if (qi) {
+          callback && (qi.load || qi.callbacks.push(callback));
+          callback && (qi.load && callback());
+        } else {
+          q.push({
+            urls: _urls,
+            callbacks: callback ? [callback] : [],
+            load: false
+          });
+          for (i = 0; i < val.length; i++) {
+            node = null, url = val[i];
+            if (s[url] === undefined) {
+              (type === 'js' ) && (node = createNode('script', { src: url }));
+              (type === 'css') && (node = createNode('link', { rel: 'stylesheet', href: url }));
+              if (node) {
+                node.onload = (function(type, url) {
+                  return function() {
+                    end(type, url);
+                  };
+                })(type, url);
+                (doc.head || doc.body).appendChild(node);
+                s[url] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+    return {
+      js: function(url, callback) {
+        load('js', url, callback);
+      },
+      css: function(url, callback) {
+        load('css', url, callback);
+      }
+    };
+  })(this.document);
+})();
+</script><script>
+  (function() {
+    var TEXT_VARIABLES = {
+      version: '2.2.6',
+      sources: {
+        font_awesome: 'https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.1/css/all.css',
+        jquery: 'https://cdn.bootcss.com/jquery/3.1.1/jquery.min.js',
+        leancloud_js_sdk: '//cdn.jsdelivr.net/npm/leancloud-storage@3.13.2/dist/av-min.js',
+        chart: 'https://cdn.bootcss.com/Chart.js/2.7.2/Chart.bundle.min.js',
+        gitalk: {
+          js: 'https://cdn.bootcss.com/gitalk/1.2.2/gitalk.min.js',
+          css: 'https://cdn.bootcss.com/gitalk/1.2.2/gitalk.min.css'
+        },
+        valine: 'https://unpkg.com/valine/dist/Valine.min.js',
+        mathjax: 'https://cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML',
+        mermaid: 'https://cdn.bootcss.com/mermaid/8.0.0-rc.8/mermaid.min.js'
+      },
+      site: {
+        toc: {
+          selectors: 'h1,h2,h3'
+        }
+      },
+      paths: {
+        search_js: '/assets/search.js'
+      }
+    };
+    window.TEXT_VARIABLES = TEXT_VARIABLES;
+  })();
+</script>
+</head>
+  <body>
+    <div class="root" data-is-touch="false">
+      <div class="layout--page js-page-root"><div class="page__main js-page-main page__viewport has-aside cell cell--auto">
+
+      <div class="page__main-inner"><div class="page__header d-print-none"><header class="header"><div class="main">
+      <div class="header__title">
+        <div class="header__brand"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="24px" height="24px" viewBox="0 0 24 24">
+<style type="text/css">
+	.st0{fill:#515151;}
+</style>
+<path class="st0" d="M1.7,22.3c5.7-5.7,11.3-5.7,17,0c3.3-3.3,3.5-5.3,0.8-6c2.7,0.7,3.5-1.1,2.3-5.6s-3.3-5.2-6.3-2.1
+	c3-3,2.3-5.2-2.1-6.3S7,1.8,7.7,4.6C7,1.8,5,2.1,1.7,5.3C7.3,11,7.3,16.7,1.7,22.3"/>
+</svg>
+<a title="A blog about programming, maths, AI, and jujitsu.
+" href="/">Nicolas' Blog</a></div><button class="button button--secondary button--circle search-button js-search-toggle"><i class="fas fa-search"></i></button></div><nav class="navigation">
+        <ul><li class="navigation__item"><a href="/archive.html">Archive</a></li><li class="navigation__item"><a href="/about.html">About</a></li><li><button class="button button--secondary button--circle search-button js-search-toggle"><i class="fas fa-search"></i></button></li></ul>
+      </nav></div>
+  </header>
+</div><div class="page__content"><div class ="main"><div class="grid grid--reverse">
+
+              <div class="col-aside d-print-none js-col-aside"><aside class="page__aside js-page-aside"><div class="toc-aside js-toc-root"></div>
+</aside></div>
+
+              <div class="col-main cell cell--auto"><!-- start custom main top snippet -->
+
+<!-- end custom main top snippet -->
+<article itemscope itemtype="http://schema.org/Article"><div class="article__header"><header><h1>What is quantization in modern AI ?</h1></header><span class="split-space">&nbsp;</span>
+          <a class="edit-on-github"
+            title=""
+            href="https://github.com/nicolaspllr1.github.io/tree/main/_posts/2024-05-23-welcome-to-jekyll.markdown">
+            <i class="far fa-edit"></i></a></div><meta itemprop="headline" content="What is quantization in modern AI ?"><div class="article__info clearfix"><ul class="right-col menu"><li><i class="far fa-calendar-alt"></i> <span>2024-05-23 00:00:00 +0000</span>
+            </li></ul></div><meta itemprop="author" content="Nicolas Pellerin"/><meta itemprop="datePublished" content="2024-05-23T00:00:00+00:00"><div class="js-article-content"><div class="layout--article"><!-- start custom article top snippet -->
+
+<!-- end custom article top snippet -->
+<div class="article__content" itemprop="articleBody"><p><img src="/assets/img/cute_llama.webp" alt="Cute llama lifting weights - courtesy of DALL-E 3" width="512px" height="512px" /></p>
+
+<h2 id="quantization---ais-weight-loss-plan">Quantization - AI’s weight loss plan</h2>
+
+<p>‘Quantization’ refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.</p>
+
+<p>Consider the new Llama 3 70B.</p>
+
+<p>If you load it in 32-bit precision on your GPU <sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>, it will require around (32 / 8) * 70 = 280 GB of VRAM 🥶. For regular folks with access to 1 or 2 consumer GPUs at best, this memory cost is prohibitive and the model cannot be run <sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>.</p>
+
+<p>This is where quantization kicks in to lower the memory required to run models.</p>
+
+<p>Before we dive into data types, memory footprint calculations and specific quantization algorithms such as GPTQ, AWQ or HQQ, let’s understand why quantization in particular and model compression in general have become critical in modern AI.</p>
+
+<h3 id="plus-size-ai">Plus-size AI</h3>
+
+<p>AI models have been getting larger and larger.</p>
+
+<p>Epoch AI has a nice paper exploring this trend + their dataset is regularly updated. Look at the evolution of the parameter count from 1950 to 2024 :</p>
+
+<p>From Epoch AI paper</p>
+
+<p>Pay attention to the y-axis log scale. It indicates the parameter count order of magnitude - OOM. Notice how the slope is increasing.  On this figure, every vertical increment represent a gain of a full order of magnitude !</p>
+
+<p>Meaning across the board,  models have been gaining orders of magnitudes more parameters and this increase in size has been accelerating</p>
+
+<h4 id="natural-language-processing">Natural language processing</h4>
+
+<p>Consider the GPT series trained by OpenAI :</p>
+
+<p><img src="/assets/img/GPTs_timelmine_summary.png" alt="GPTs timeline" /></p>
+
+<p>Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog post.</p>
+
+<p>Gaining 3 OOMs was achieved in ~ 2 years.</p>
+
+<p><img src="/assets/img/gpt_series_OOMs_screen.png" alt="GPTs sizes" /></p>
+
+<p>Mid 2018, OpenAI released GPT-1 with ~100M params <sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>. Next in 2019, they progressively released the GPT-2 models. The largest GPT-2 at 1.5B params was 10x larger than GPT-1 . Next mid 2020 they announced GPT-3 - but did not release the weights this time 😢 - with an outstanding size of 175B parameters. Meaning ~100x GPT-2 size and 10x larger than any dense model at the time. Finally in March 2024 they announced GPT-4. Although this time they did not publicly disclose its architecture, it is rumored to be a 1.7T MoE so again a 10x increase in size compared to GPT-3 <sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>.</p>
+
+<p>And it’s not just OpenAI’s GPTs. This trend can be observed across the board in the modern NLP history :</p>
+
+<p>(landmark model : its parameter count)</p>
+
+<ul>
+  <li>
+    <p>1997, original LSTM : ~10k</p>
+  </li>
+  <li>
+    <p>2014, Seq2Seq LSTM : ~400M</p>
+  </li>
+  <li>
+    <p>2017, original Transformer : ~200M</p>
+  </li>
+  <li>
+    <p>2018, BERT : base model at 110M and the large at 340M.</p>
+  </li>
+  <li>
+    <p>early 2023, Llama 1 : 7B, 13B, 33B, and 65B</p>
+  </li>
+  <li>
+    <p>summer 2023, Llama 2 : 7B, 13B and 70B</p>
+  </li>
+  <li>
+    <p>April 2024, Llama 3 : 8B, 70B and the 400B (!) version announced but not released yet</p>
+  </li>
+</ul>
+
+<p>In 2024, almost all models have a parameter count in the billions ! Models having less than 10 billions parameters are often considered “small”  ! For instance, the release of llama 3 8B has been much appreciated as its size makes it relatively small in the modern context of LLMs and it has been trained a lot. Making smaller models more capable is a recent trend that seems to be gaining traction. Andrej Karpathy for one has been pushing for smaller yet capable models and the recent Phi-3 model drives in this direction.</p>
+
+<h4 id="computer-vision">Computer vision</h4>
+
+<p>Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —&gt;AlexNet —&gt; ResNets, YOLOs —&gt; ViTs</p>
+
+<p><img src="/assets/img/landmark_models_cv_screen.png" alt="Landmark models in computer vision - timeline" /></p>
+
+<p>Timeline I made. See the increasing number of parameters :)</p>
+
+<p>In short, models sizes across the board in the AI landscape have been exploding.     And why you may ask ?</p>
+
+<h3 id="why-">Why ?</h3>
+
+<p>One major force that is driving this explosion is scaling laws.</p>
+
+<p>I won’t deep dive into this fascinating topic here - maybe in a future post :) .</p>
+
+<p>If you want to get started, EpochAI literature review looks great <sup id="fnref:5" role="doc-noteref"><a href="#fn:5" class="footnote" rel="footnote">5</a></sup>.</p>
+
+<p>On a personal note, I would recommend paper-wise reading OpenAI’s 2020 publications where they study scaling laws for GPTs performing language modeling up to 1B models, and then explore how their findings generalize to other AI tasks.</p>
+
+<p><img src="/assets/img/openAI_power_laws.png" alt="OpenAI scaling laws - power law" /></p>
+
+<p>Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above</p>
+
+<p>Finally, the 2022 Chinchilla paper which provides more precise scaling laws than OpenAI’s and estimates “compute optimal” training recipes.</p>
+
+<p>And obviously you should read Dwarkesh awesome article on scaling laws. Many many incredible pointers/references/ideas well-articulated and communicated in this piece written as a dialogue.</p>
+
+<h2 id="the-costs-of-size">The costs of size</h2>
+
+<p>Okay, models are huge. How is it a problem ?</p>
+
+<p>—&gt; Training and inference costs increase with model size.</p>
+
+<p>With crazy scale comes crazy numbers</p>
+
+<p>There are several costs to consider. Some a causally linked like computation and energy.</p>
+
+<p>Costs to consider when training / running AI models :</p>
+
+<ul>
+  <li>
+    <p>Memory to load models</p>
+  </li>
+  <li>
+    <p>FLOPs to train or run inferences ~ energy, latency, throughput</p>
+  </li>
+  <li>
+    <p>Cluster maintenance becomes a challenge ~ infrastructure, skills, time</p>
+  </li>
+</ul>
+
+<p>The larger the model the more ressources are needed to both train and simply run an inference. In terms of computation, costs for a single pass of training and or a single batch of inference are roughly <sup id="fnref:6" role="doc-noteref"><a href="#fn:6" class="footnote" rel="footnote">6</a></sup> proportional to the model size i.e its parameter count.</p>
+
+<p>Mental model on “compute” :</p>
+
+<p>See below the consequence of larger models (and larger training datasets) on compute costs :</p>
+
+<p><img src="/assets/img/compute-trends.png" alt="EpochAI compute trend figure" /></p>
+
+<p>Compute is driven by model and dataset sizes (source : Epoch AI &lt;3)</p>
+
+<p>The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the llama 2 paper, the training of the Llama 2 series required  3,311,616 &gt; 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —&gt; think a cluster of 6,000 A100s working full-time for 12 days.</p>
+
+<p>Karpathy in his intro talk to LLMs, these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …</p>
+
+<p><img src="/assets/img/karpathy_llama2_rookie_numbers.png" alt="Screenshot from Karpathy's video - llama2 rookie numbers" /></p>
+
+<p>Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”</p>
+
+<p>Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs <sup id="fnref:7" role="doc-noteref"><a href="#fn:7" class="footnote" rel="footnote">7</a></sup>. Maintaining the good health of such clusters becomes a technical challenge as discussed here for example.</p>
+
+<p>Estimating memory requirement. As a first estimation :</p>
+
+<p>Straightforward : to load the model, you have to load every parameters. Thus memory required is the sum of the memory required to load a single parameter.</p>
+
+<p>How can we know the memory requirement of a single weight ? This is directly related to the “precision” chosen to represent this number in the computer. In scientific computing where a lot of precision is needed, real number are often represented with 64 bits. In Machine learning, it’s often 32 bits as this is already sufficient.</p>
+
+<p>I will not dive into the specifics of representing numbers in the computer here. This will be the topic of the next section. But knowing how many bits are used to store a single parameter, one can easy convert this to a number of bytes - 1 bytes = 8 bits. Finally, 1 billion bytes is exactly 1 GB. Given that models are often in the billions of parameters in size, you can easily estimate the memory requirement to hold the entire model in memory (be it the disk, the RAM or a GPU memory).</p>
+
+<h2 id="model-compression-via-quantization">Model compression via quantization</h2>
+
+<h3 id="general-idea">General idea</h3>
+
+<p>Model are getting larger and larger. On the one hand, larger sizes are driving AI progress. On the other hand,  larger sizes come with costs :</p>
+
+<ul>
+  <li>
+    <p>Loading models requires a lot of memory</p>
+  </li>
+  <li>
+    <p>Running/training models requires doing a ton of compute - FLOPs</p>
+  </li>
+  <li>
+    <p>Memory and compute being fundamentally related to energy - and as a consequence money.</p>
+  </li>
+</ul>
+
+<p>In order to benefit from powerful AI while diminishing the costs, one could try to compress models. The idea is would be to attack the problem at its root : model sizes.</p>
+
+<h3 id="llms-as-an-example">LLMs as an example</h3>
+
+<p>As Andrej Karpathy so clearly summarizes, LLMs are lossy compressions of their training dataset. This is true in general in AI where one can think of models as big curves fitted on a dataset - think polynomial interpolation - François Chollet explains this all the time, here for instance. Thus data is compressed into the model through its parameters and computation graph.</p>
+
+<p>Given all the general knowledge that models encapsulate - think your experience with chatGPT - you may believe that this compression is extremely precise and that tweaking a couple of parameters may throw everything off …</p>
+
+<p>However this is absolutely not the case.</p>
+
+<p>Among the billions of parameters, many if not most are rarely being activated and their contribution to performance - next word prediction for instance - is very negligible.</p>
+
+<p>The extent to which some parameters are negligible can be quantified and one may try to simply remove these negligible weights. By removing useless parameters, models get lighter. This process is called pruning. Pruning - individual weights or even entire layers -  is one class of compression algorithm. Quantization is another one.</p>
+
+<p>Quantization algorithms typically do not remove weights nor layers directly. The structure of the model stays the same. The number of parameters stays the same.</p>
+
+<p>What is going to change is how much memory is used to store each weight.</p>
+
+<h3 id="first-example--naïve-32-bit--16-bit">First example : naïve 32-bit —&gt; 16-bit</h3>
+
+<p>The specifics of data types and how numbers are stored will be covered in the next section. For now, accept that numbers in a computer can be stored and used in computation using either :</p>
+
+<ul>
+  <li>
+    <p>32 bits = 4 bytes of memory per number</p>
+  </li>
+  <li>
+    <p>16 bits = 2 bytes of memory per number</p>
+  </li>
+</ul>
+
+<p>Usually, AI models will have their parameters represented in the computer using the 1st method : 32-bit precision. This allow for very precise calculations as we will explore in the next section.</p>
+
+<p>However, this precision may not be needed to run models. Let’s try to convert a model from 32-bit precision to 16-bit precision.</p>
+
+<p>—&gt; As we cut off memory requirement by half for each parameter, the memory requirement for the model as a whole will also be slashed in half.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">AutoTokenizer</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="n">torch</span><span class="p">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Simple quantization algo on a "small" gpt-2 --&gt; gpu not needed
+</span><span class="n">device</span> <span class="o">=</span> <span class="s">"cpu"</span> 
+
+<span class="c1"># load model and its tokenizer (in ram)
+</span><span class="n">model_id</span> <span class="o">=</span> <span class="s">"gpt2"</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="p">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">).</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="p">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"--------------------------------"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"What's the model size in (mega)bytes ?"</span><span class="p">)</span>
+
+<span class="n">model_size_in_bytes</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="n">get_memory_footprint</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Model memory footprint : </span><span class="si">{</span><span class="n">model_size_in_bytes</span><span class="o">/</span><span class="mf">1e6</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="s"> MB"</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"---------------------------------------------------------"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Quantizing 32-bit --&gt; 16-bit the first layer of the model"</span><span class="p">)</span>
+
+<span class="c1"># extract the first layer weights (cf Maxime Labonne's article code example)
+</span><span class="n">weights</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="n">transformer</span><span class="p">.</span><span class="n">h</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">attn</span><span class="p">.</span><span class="n">c_attn</span><span class="p">.</span><span class="n">weight</span><span class="p">.</span><span class="n">data</span>
+<span class="c1"># Layer size in bytes
+</span><span class="n">layer_size_in_bytes</span> <span class="o">=</span> <span class="n">weights</span><span class="p">.</span><span class="n">element_size</span><span class="p">()</span> <span class="o">*</span> <span class="n">weights</span><span class="p">.</span><span class="n">nelement</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Original layer memory footprint : </span><span class="si">{</span><span class="n">layer_size_in_bytes</span><span class="o">/</span><span class="mf">1e6</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="s"> MB"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Original data type : </span><span class="si">{</span><span class="n">weights</span><span class="p">.</span><span class="n">dtype</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Original weights: </span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+<span class="c1"># 32-bit --&gt; 16-bit
+</span><span class="n">weights_q</span> <span class="o">=</span> <span class="n">weights</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">float16</span><span class="p">)</span>
+<span class="c1"># Lighter layer : size cut in half ?
+</span><span class="n">new_layer_size_bytes</span> <span class="o">=</span> <span class="n">weights_q</span><span class="p">.</span><span class="n">element_size</span><span class="p">()</span> <span class="o">*</span> <span class="n">weights_q</span><span class="p">.</span><span class="n">nelement</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Quantized layer memory footprint : </span><span class="si">{</span><span class="n">new_layer_size_bytes</span><span class="o">/</span><span class="mf">1e6</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="s"> MB"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"New data type : </span><span class="si">{</span><span class="n">weights_q</span><span class="p">.</span><span class="n">dtype</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"New quantized weights: </span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+
+
+<span class="k">print</span><span class="p">(</span><span class="s">"---------------------------------------------"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"Quantizing 32-bit --&gt; 16-bit the entire model "</span><span class="p">)</span>
+
+<span class="c1"># Layer by layer quantization
+</span><span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">model</span><span class="p">.</span><span class="n">parameters</span><span class="p">():</span>
+    <span class="n">layer</span><span class="p">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="n">float16</span><span class="p">)</span>
+
+<span class="c1"># New model memory footprint
+</span><span class="k">print</span><span class="p">(</span><span class="s">"What's the quantized model size in (mega)bytes ?"</span><span class="p">)</span>
+<span class="n">new_memory_footprint_bytes</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="n">get_memory_footprint</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Quantized model memory footprint : </span><span class="si">{</span><span class="n">new_memory_footprint_bytes</span><span class="o">/</span><span class="mf">1e6</span><span class="si">:</span><span class="p">.</span><span class="mi">2</span><span class="n">f</span><span class="si">}</span><span class="s"> MB"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-terminal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="go">
+--------------------------------
+
+What's the model size in (mega)bytes ?
+Model memory footprint : 510.34 MB
+
+---------------------------------------------------------
+</span><span class="gp">Quantizing 32-bit --&gt;</span><span class="w"> </span>16-bit the first layer of the model
+<span class="go">
+Original layer memory footprint : 7.08 MB
+Original data type : torch.float32
+Original weights: 
+ tensor([[-0.4738, -0.2614, -0.0978,  ...,  0.0513, -0.0584,  0.0250],
+        [ 0.0874,  0.1473,  0.2387,  ..., -0.0525, -0.0113, -0.0156],
+        [ 0.0039,  0.0695,  0.3668,  ...,  0.1143,  0.0363, -0.0318],
+        ...,
+        [-0.2592, -0.0164,  0.1991,  ...,  0.0095, -0.0516,  0.0319],
+        [ 0.1517,  0.2170,  0.1043,  ...,  0.0293, -0.0429, -0.0475],
+        [-0.4100, -0.1924, -0.2400,  ..., -0.0046,  0.0070,  0.0198]])
+
+Quantized layer memory footprint : 3.54 MB
+New data type : torch.float16
+New quantized weights: 
+ tensor([[-0.4738, -0.2614, -0.0978,  ...,  0.0513, -0.0584,  0.0250],
+        [ 0.0874,  0.1473,  0.2387,  ..., -0.0525, -0.0113, -0.0156],
+        [ 0.0039,  0.0695,  0.3668,  ...,  0.1143,  0.0363, -0.0318],
+        ...,
+        [-0.2592, -0.0164,  0.1991,  ...,  0.0095, -0.0516,  0.0319],
+        [ 0.1517,  0.2170,  0.1043,  ...,  0.0293, -0.0429, -0.0475],
+        [-0.4100, -0.1924, -0.2400,  ..., -0.0046,  0.0070,  0.0198]])
+
+---------------------------------------------
+</span><span class="gp">Quantizing 32-bit --&gt;</span><span class="w"> </span>16-bit the entire model 
+<span class="go">
+What's the quantized model size in (mega)bytes ?
+Quantized model memory footprint : 261.46 MB
+
+</span></code></pre></div></div>
+
+<p>This piece of code shows you how you can very easily download a model locally on your machine from the Hugging Face hub. Then, you can built-in utils from the transformers and torch librairies to look at the model size in bytes.</p>
+
+<p>Initially, weights are stored in the computer using 32 bits. This code forces the weights from 32 bits to a 16 bits representation in memory. This would be analogous to truncating a number in physics to account for the significance of digits. Essentially, we are saying</p>
+
+<p>for every parameters of the model. More or less truncating the “precision” by half <sup id="fnref:8" role="doc-noteref"><a href="#fn:8" class="footnote" rel="footnote">8</a></sup>. See how you don’t even notice the change in precision with the prints ! But still, precision has been diminished.</p>
+
+<p>How is the performance affected ? Let’s try to benchmark this with :</p>
+
+<ul>
+  <li>
+    <p>Qualitative evaluation with a simple inference on a given prompt</p>
+  </li>
+  <li>
+    <p>Quantitative measurement of “next token prediction” with the model perplexity on a given dataset</p>
+  </li>
+</ul>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:1" role="doc-endnote">
+      <p>N-bit precision and memory footprint calculation will be explained later in the post. Basically, each parameter requires 32 bits / 8 bits per byte = 4 bytes of memory. Thus 70 billions of such parameters amount to 70B * 4 bytes = 280 GB of memory. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:2" role="doc-endnote">
+      <p>Considering a “simple” run where on tries to load the entire model in a single GPU at once. However there are many tactics to run larger model on a GPU than one would expect given the amount of VRAM available (for instance off-loading some layers onto the RAM or even the disk to alleviate the memory pressure on the GPU) <a href="#fnref:2" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:3" role="doc-endnote">
+      <p>“117M” ? Given gpt2 x10 gpt1, must be ~100M <a href="#fnref:3" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:4" role="doc-endnote">
+      <p>Big caveat here as we are not comparing apples to apples. GPT-1, 2 and 3 are  ‘dense’  as opposed to the ‘sparse’ MoE architecture   that GPT-4 is believed to be. Same  kind of architecture than the popular Mixtrals for instance, where only a subset of all the weights are active in a given inference round. <a href="#fnref:4" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:5" role="doc-endnote">
+      <p>I have not read it thoroughly. I just discovered it while writing this post. But as always with EpochAI work it looks great. <a href="#fnref:5" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:6" role="doc-endnote">
+      <p>The specifics depends on your training/inference strategy. <a href="#fnref:6" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:7" role="doc-endnote">
+      <p>2 clusters of 24 000 GPU. See llama 3 introduction post  (section “Scaling up pretraining”). <a href="#fnref:7" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+    <li id="fn:8" role="doc-endnote">
+      <p>How the precision is affected depends on how you use your 32 or 16 bits. More on that in the data type section. <a href="#fnref:8" class="reversefootnote" role="doc-backlink">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+</div><section class="article__sharing d-print-none"></section><div class="d-print-none"><footer class="article__footer"><meta itemprop="dateModified" content="2024-05-23T00:00:00+00:00"><!-- start custom article footer snippet -->
+
+<!-- end custom article footer snippet -->
+<div class="article__subscribe"><div class="subscribe"><i class="fas fa-rss"></i> <a type="application/rss+xml" href="/feed.xml"></a></div>
+</div><div class="article__license"></div></footer>
+</div>
+
+</div>
+
+<script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    $(function() {
+      var $this ,$scroll;
+      var $articleContent = $('.js-article-content');
+      var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+      var scroll = hasSidebar ? '.js-page-main' : 'html, body';
+      $scroll = $(scroll);
+
+      $articleContent.find('.highlight').each(function() {
+        $this = $(this);
+        $this.attr('data-lang', $this.find('code').attr('data-lang'));
+      });
+      $articleContent.find('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').each(function() {
+        $this = $(this);
+        $this.append($('<a class="anchor d-print-none" aria-hidden="true"></a>').html('<i class="fas fa-anchor"></i>'));
+      });
+      $articleContent.on('click', '.anchor', function() {
+        $scroll.scrollToAnchor('#' + $(this).parent().attr('id'), 400);
+      });
+    });
+  });
+})();
+</script>
+</div><section class="page__comments d-print-none"></section></article><!-- start custom main bottom snippet -->
+
+<!-- end custom main bottom snippet -->
+</div>
+            </div></div></div><div class="page__footer d-print-none">
+<footer class="footer py-4 js-page-footer">
+  <div class="main"><div itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nicolas Pellerin"><meta itemprop="url" content="/"><meta itemprop="description" content="Aligato."><div class="footer__author-links"><div class="author-links">
+  <ul class="menu menu--nowrap menu--inline"><li title="">
+        <a class="button button--circle github-button" itemprop="sameAs" href="https://github.com/NicolasPllr1" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path class="svgpath" data-index="path_0" fill="#272636" d="M0 525.2c0 223.6 143.3 413.7 343 483.5 26.9 6.8 22.8-12.4 22.8-25.4l0-88.7c-155.3 18.2-161.5-84.6-172-101.7-21.1-36-70.8-45.2-56-62.3 35.4-18.2 71.4 4.6 113.1 66.3 30.2 44.7 89.1 37.2 119 29.7 6.5-26.9 20.5-50.9 39.7-69.6C248.8 728.2 181.7 630 181.7 513.2c0-56.6 18.7-108.7 55.3-150.7-23.3-69.3 2.2-128.5 5.6-137.3 66.5-6 135.5 47.6 140.9 51.8 37.8-10.2 80.9-15.6 129.1-15.6 48.5 0 91.8 5.6 129.8 15.9 12.9-9.8 77-55.8 138.8-50.2 3.3 8.8 28.2 66.7 6.3 135 37.1 42.1 56 94.6 56 151.4 0 117-67.5 215.3-228.8 243.7 26.9 26.6 43.6 63.4 43.6 104.2l0 128.8c0.9 10.3 0 20.5 17.2 20.5C878.1 942.4 1024 750.9 1024 525.3c0-282.9-229.3-512-512-512C229.1 13.2 0 242.3 0 525.2L0 525.2z" />
+</svg>
+</div>
+        </a>
+      </li></ul>
+</div>
+</div>
+    </div><div class="site-info mt-2">
+      <div>© Nicolas' Blog ,
+        Powered by <a title="Jekyll is a simple, blog-aware, static site generator." href="http://jekyllrb.com/">Jekyll</a> & <a
+        title="TeXt is a super customizable Jekyll theme." href="https://github.com/kitian616/jekyll-TeXt-theme">TeXt Theme</a>.
+      </div>
+    </div>
+  </div>
+</footer>
+</div></div>
+    </div><script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $body = $('body'), $window = $(window);
+    var $pageRoot = $('.js-page-root'), $pageMain = $('.js-page-main');
+    var activeCount = 0;
+    function modal(options) {
+      var $root = this, visible, onChange, hideWhenWindowScroll = false;
+      var scrollTop;
+      function setOptions(options) {
+        var _options = options || {};
+        visible = _options.initialVisible === undefined ? false : show;
+        onChange = _options.onChange;
+        hideWhenWindowScroll = _options.hideWhenWindowScroll;
+      }
+      function init() {
+        setState(visible);
+      }
+      function setState(isShow) {
+        if (isShow === visible) {
+          return;
+        }
+        visible = isShow;
+        if (visible) {
+          activeCount++;
+          scrollTop = $(window).scrollTop() || $pageMain.scrollTop();
+          $root.addClass('modal--show');
+          $pageMain.scrollTop(scrollTop);
+          activeCount === 1 && ($pageRoot.addClass('show-modal'), $body.addClass('of-hidden'));
+          hideWhenWindowScroll && window.hasEvent('touchstart') && $window.on('scroll', hide);
+          $window.on('keyup', handleKeyup);
+        } else {
+          activeCount > 0 && activeCount--;
+          $root.removeClass('modal--show');
+          $window.scrollTop(scrollTop);
+          activeCount === 0 && ($pageRoot.removeClass('show-modal'), $body.removeClass('of-hidden'));
+          hideWhenWindowScroll && window.hasEvent('touchstart') && $window.off('scroll', hide);
+          $window.off('keyup', handleKeyup);
+        }
+        onChange && onChange(visible);
+      }
+      function show() {
+        setState(true);
+      }
+      function hide() {
+        setState(false);
+      }
+      function handleKeyup(e) {
+        // Char Code: 27  ESC
+        if (e.which ===  27) {
+          hide();
+        }
+      }
+      setOptions(options);
+      init();
+      return {
+        show: show,
+        hide: hide,
+        $el: $root
+      };
+    }
+    $.fn.modal = modal;
+  });
+})();
+</script><div class="modal modal--overflow page__search-modal d-print-none js-page-search-modal"><script>
+(function () {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    // search panel
+    var search = (window.search || (window.search = {}));
+    var useDefaultSearchBox = window.useDefaultSearchBox === undefined ?
+      true : window.useDefaultSearchBox ;
+
+    var $searchModal = $('.js-page-search-modal');
+    var $searchToggle = $('.js-search-toggle');
+    var searchModal = $searchModal.modal({ onChange: handleModalChange, hideWhenWindowScroll: true });
+    var modalVisible = false;
+    search.searchModal = searchModal;
+
+    var $searchBox = null;
+    var $searchInput = null;
+    var $searchClear = null;
+
+    function getModalVisible() {
+      return modalVisible;
+    }
+    search.getModalVisible = getModalVisible;
+
+    function handleModalChange(visible) {
+      modalVisible = visible;
+      if (visible) {
+        search.onShow && search.onShow();
+        useDefaultSearchBox && $searchInput[0] && $searchInput[0].focus();
+      } else {
+        search.onShow && search.onHide();
+        useDefaultSearchBox && $searchInput[0] && $searchInput[0].blur();
+        setTimeout(function() {
+          useDefaultSearchBox && ($searchInput.val(''), $searchBox.removeClass('not-empty'));
+          search.clear && search.clear();
+          window.pageAsideAffix && window.pageAsideAffix.refresh();
+        }, 400);
+      }
+    }
+
+    $searchToggle.on('click', function() {
+      modalVisible ? searchModal.hide() : searchModal.show();
+    });
+    // Char Code: 83  S, 191 /
+    $(window).on('keyup', function(e) {
+      if (!modalVisible && !window.isFormElement(e.target || e.srcElement) && (e.which === 83 || e.which === 191)) {
+        modalVisible || searchModal.show();
+      }
+    });
+
+    if (useDefaultSearchBox) {
+      $searchBox = $('.js-search-box');
+      $searchInput = $searchBox.children('input');
+      $searchClear = $searchBox.children('.js-icon-clear');
+      search.getSearchInput = function() {
+        return $searchInput.get(0);
+      };
+      search.getVal = function() {
+        return $searchInput.val();
+      };
+      search.setVal = function(val) {
+        $searchInput.val(val);
+      };
+
+      $searchInput.on('focus', function() {
+        $(this).addClass('focus');
+      });
+      $searchInput.on('blur', function() {
+        $(this).removeClass('focus');
+      });
+      $searchInput.on('input', window.throttle(function() {
+        var val = $(this).val();
+        if (val === '' || typeof val !== 'string') {
+          search.clear && search.clear();
+        } else {
+          $searchBox.addClass('not-empty');
+          search.onInputNotEmpty && search.onInputNotEmpty(val);
+        }
+      }, 400));
+      $searchClear.on('click', function() {
+        $searchInput.val(''); $searchBox.removeClass('not-empty');
+        search.clear && search.clear();
+      });
+    }
+  });
+})();
+</script><div class="search search--dark">
+  <div class="main">
+    <div class="search__header"></div>
+    <div class="search-bar">
+      <div class="search-box js-search-box">
+        <div class="search-box__icon-search"><i class="fas fa-search"></i></div>
+        <input type="text" />
+        <div class="search-box__icon-clear js-icon-clear">
+          <a><i class="fas fa-times"></i></a>
+        </div>
+      </div>
+      <button class="button button--theme-dark button--pill search__cancel js-search-toggle">
+        </button>
+    </div>
+    <div class="search-result js-search-result"></div>
+  </div>
+</div>
+<script>var SOURCES = window.TEXT_VARIABLES.sources;
+var PAHTS = window.TEXT_VARIABLES.paths;
+window.Lazyload.js([SOURCES.jquery, PAHTS.search_js], function() {
+  var search = (window.search || (window.search = {}));
+  var searchData = window.TEXT_SEARCH_DATA || {};
+
+  function memorize(f) {
+    var cache = {};
+    return function () {
+      var key = Array.prototype.join.call(arguments, ',');
+      if (key in cache) return cache[key];
+      else return cache[key] = f.apply(this, arguments);
+    };
+  }
+
+  /// search
+  function searchByQuery(query) {
+    var i, j, key, keys, cur, _title, result = {};
+    keys = Object.keys(searchData);
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i];
+      for (j = 0; j < searchData[key].length; j++) {
+        cur = searchData[key][j], _title = cur.title;
+        if ((result[key] === undefined || result[key] && result[key].length < 4 )
+          && _title.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+          if (result[key] === undefined) {
+            result[key] = [];
+          }
+          result[key].push(cur);
+        }
+      }
+    }
+    return result;
+  }
+
+  var renderHeader = memorize(function(header) {
+    return $('<p class="search-result__header">' + header + '</p>');
+  });
+
+  var renderItem = function(index, title, url) {
+    return $('<li class="search-result__item" data-index="' + index + '"><a class="button" href="' + url + '">' + title + '</a></li>');
+  };
+
+  function render(data) {
+    if (!data) { return null; }
+    var $root = $('<ul></ul>'), i, j, key, keys, cur, itemIndex = 0;
+    keys = Object.keys(data);
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i];
+      $root.append(renderHeader(key));
+      for (j = 0; j < data[key].length; j++) {
+        cur = data[key][j];
+        $root.append(renderItem(itemIndex++, cur.title, cur.url));
+      }
+    }
+    return $root;
+  }
+
+  // search box
+  var $result = $('.js-search-result'), $resultItems;
+  var lastActiveIndex, activeIndex;
+
+  function clear() {
+    $result.html(null);
+    $resultItems = $('.search-result__item'); activeIndex = 0;
+  }
+  function onInputNotEmpty(val) {
+    $result.html(render(searchByQuery(val)));
+    $resultItems = $('.search-result__item'); activeIndex = 0;
+    $resultItems.eq(0).addClass('active');
+  }
+
+  search.clear = clear;
+  search.onInputNotEmpty = onInputNotEmpty;
+
+  function updateResultItems() {
+    lastActiveIndex >= 0 && $resultItems.eq(lastActiveIndex).removeClass('active');
+    activeIndex >= 0 && $resultItems.eq(activeIndex).addClass('active');
+  }
+
+  function moveActiveIndex(direction) {
+    var itemsCount = $resultItems ? $resultItems.length : 0;
+    if (itemsCount > 1) {
+      lastActiveIndex = activeIndex;
+      if (direction === 'up') {
+        activeIndex = (activeIndex - 1 + itemsCount) % itemsCount;
+      } else if (direction === 'down') {
+        activeIndex = (activeIndex + 1 + itemsCount) % itemsCount;
+      }
+      updateResultItems();
+    }
+  }
+
+  // Char Code: 13  Enter, 37  ⬅, 38  ⬆, 39  ➡, 40  ⬇
+  $(window).on('keyup', function(e) {
+    var modalVisible = search.getModalVisible && search.getModalVisible();
+    if (modalVisible) {
+      if (e.which === 38) {
+        modalVisible && moveActiveIndex('up');
+      } else if (e.which === 40) {
+        modalVisible && moveActiveIndex('down');
+      } else if (e.which === 13) {
+        modalVisible && $resultItems && activeIndex >= 0 && $resultItems.eq(activeIndex).children('a')[0].click();
+      }
+    }
+  });
+
+  $result.on('mouseover', '.search-result__item > a', function() {
+    var itemIndex = $(this).parent().data('index');
+    itemIndex >= 0 && (lastActiveIndex = activeIndex, activeIndex = itemIndex, updateResultItems());
+  });
+});
+</script>
+</div></div>
+
+
+<script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function scrollToAnchor(anchor, duration, callback) {
+      var $root = this;
+      $root.animate({ scrollTop: $(anchor).position().top }, duration, function() {
+        window.history.replaceState(null, '', window.location.href.split('#')[0] + anchor);
+        callback && callback();
+      });
+    }
+    $.fn.scrollToAnchor = scrollToAnchor;
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function affix(options) {
+      var $root = this, $window = $(window), $scrollTarget, $scroll,
+        offsetBottom = 0, scrollTarget = window, scroll = window.document, disabled = false, isOverallScroller = true,
+        rootTop, rootLeft, rootHeight, scrollBottom, rootBottomTop,
+        hasInit = false, curState;
+
+      function setOptions(options) {
+        var _options = options || {};
+        _options.offsetBottom && (offsetBottom = _options.offsetBottom);
+        _options.scrollTarget && (scrollTarget = _options.scrollTarget);
+        _options.scroll && (scroll = _options.scroll);
+        _options.disabled !== undefined && (disabled = _options.disabled);
+        $scrollTarget = $(scrollTarget);
+        isOverallScroller = window.isOverallScroller($scrollTarget[0]);
+        $scroll = $(scroll);
+      }
+      function preCalc() {
+        top();
+        rootHeight = $root.outerHeight();
+        rootTop = $root.offset().top + (isOverallScroller ? 0 :  $scrollTarget.scrollTop());
+        rootLeft = $root.offset().left;
+      }
+      function calc(needPreCalc) {
+        needPreCalc && preCalc();
+        scrollBottom = $scroll.outerHeight() - offsetBottom - rootHeight;
+        rootBottomTop = scrollBottom - rootTop;
+      }
+      function top() {
+        if (curState !== 'top') {
+          $root.removeClass('fixed').css({
+            left: 0,
+            top: 0
+          });
+          curState = 'top';
+        }
+      }
+      function fixed() {
+        if (curState !== 'fixed') {
+          $root.addClass('fixed').css({
+            left: rootLeft + 'px',
+            top: 0
+          });
+          curState = 'fixed';
+        }
+      }
+      function bottom() {
+        if (curState !== 'bottom') {
+          $root.removeClass('fixed').css({
+            left: 0,
+            top: rootBottomTop + 'px'
+          });
+          curState = 'bottom';
+        }
+      }
+      function setState() {
+        var scrollTop = $scrollTarget.scrollTop();
+        if (scrollTop >= rootTop && scrollTop <= scrollBottom) {
+          fixed();
+        } else if (scrollTop < rootTop) {
+          top();
+        } else {
+          bottom();
+        }
+      }
+      function init() {
+        if(!hasInit) {
+          var interval, timeout;
+          calc(true); setState();
+          // run calc every 100 millisecond
+          interval = setInterval(function() {
+            calc();
+          }, 100);
+          timeout = setTimeout(function() {
+            clearInterval(interval);
+          }, 45000);
+          window.pageLoad.then(function() {
+            setTimeout(function() {
+              clearInterval(interval);
+              clearTimeout(timeout);
+            }, 3000);
+          });
+          $scrollTarget.on('scroll', function() {
+            disabled || setState();
+          });
+          $window.on('resize', function() {
+            disabled || (calc(true), setState());
+          });
+          hasInit = true;
+        }
+      }
+
+      setOptions(options);
+      if (!disabled) {
+        init();
+      }
+      $window.on('resize', window.throttle(function() {
+        init();
+      }, 200));
+      return {
+        setOptions: setOptions,
+        refresh: function() {
+          calc(true, { animation: false }); setState();
+        }
+      };
+    }
+    $.fn.affix = affix;
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function toc(options) {
+      var $root = this, $window = $(window), $scrollTarget, $scroller, $tocUl = $('<ul class="toc toc--ellipsis"></ul>'), $tocLi, $headings, $activeLast, $activeCur,
+        selectors = 'h1,h2,h3', container = 'body', scrollTarget = window, scroller = 'html, body', disabled = false,
+        headingsPos, scrolling = false, hasRendered = false, hasInit = false;
+
+      function setOptions(options) {
+        var _options = options || {};
+        _options.selectors && (selectors = _options.selectors);
+        _options.container && (container = _options.container);
+        _options.scrollTarget && (scrollTarget = _options.scrollTarget);
+        _options.scroller && (scroller = _options.scroller);
+        _options.disabled !== undefined && (disabled = _options.disabled);
+        $headings = $(container).find(selectors).filter('[id]');
+        $scrollTarget = $(scrollTarget);
+        $scroller = $(scroller);
+      }
+      function calc() {
+        headingsPos = [];
+        $headings.each(function() {
+          headingsPos.push(Math.floor($(this).position().top));
+        });
+      }
+      function setState(element, disabled) {
+        var scrollTop = $scrollTarget.scrollTop(), i;
+        if (disabled || !headingsPos || headingsPos.length < 1) { return; }
+        if (element) {
+          $activeCur = element;
+        } else {
+          for (i = 0; i < headingsPos.length; i++) {
+            if (scrollTop >= headingsPos[i]) {
+              $activeCur = $tocLi.eq(i);
+            } else {
+              $activeCur || ($activeCur = $tocLi.eq(i));
+              break;
+            }
+          }
+        }
+        $activeLast && $activeLast.removeClass('active');
+        ($activeLast = $activeCur).addClass('active');
+      }
+      function render() {
+        if(!hasRendered) {
+          $root.append($tocUl);
+          $headings.each(function() {
+            var $this = $(this);
+            $tocUl.append($('<li></li>').addClass('toc-' + $this.prop('tagName').toLowerCase())
+              .append($('<a></a>').text($this.text()).attr('href', '#' + $this.prop('id'))));
+          });
+          $tocLi = $tocUl.children('li');
+          $tocUl.on('click', 'a', function(e) {
+            e.preventDefault();
+            var $this = $(this);
+            scrolling = true;
+            setState($this.parent());
+            $scroller.scrollToAnchor($this.attr('href'), 400, function() {
+              scrolling = false;
+            });
+          });
+        }
+        hasRendered = true;
+      }
+      function init() {
+        var interval, timeout;
+        if(!hasInit) {
+          render(); calc(); setState(null, scrolling);
+          // run calc every 100 millisecond
+          interval = setInterval(function() {
+            calc();
+          }, 100);
+          timeout = setTimeout(function() {
+            clearInterval(interval);
+          }, 45000);
+          window.pageLoad.then(function() {
+            setTimeout(function() {
+              clearInterval(interval);
+              clearTimeout(timeout);
+            }, 3000);
+          });
+          $scrollTarget.on('scroll', function() {
+            disabled || setState(null, scrolling);
+          });
+          $window.on('resize', window.throttle(function() {
+            if (!disabled) {
+              render(); calc(); setState(null, scrolling);
+            }
+          }, 100));
+        }
+        hasInit = true;
+      }
+
+      setOptions(options);
+      if (!disabled) {
+        init();
+      }
+      $window.on('resize', window.throttle(function() {
+        init();
+      }, 200));
+      return {
+        setOptions: setOptions
+      };
+    }
+    $.fn.toc = toc;
+  });
+})();
+/*(function () {
+
+})();*/
+</script><script>
+  /* toc must before affix, since affix need to konw toc' height. */(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  var TOC_SELECTOR = window.TEXT_VARIABLES.site.toc.selectors;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $window = $(window);
+    var $articleContent = $('.js-article-content');
+    var $tocRoot = $('.js-toc-root'), $col2 = $('.js-col-aside');
+    var toc;
+    var tocDisabled = false;
+    var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+    var hasToc = $articleContent.find(TOC_SELECTOR).length > 0;
+
+    function disabled() {
+      return $col2.css('display') === 'none' || !hasToc;
+    }
+
+    tocDisabled = disabled();
+
+    toc = $tocRoot.toc({
+      selectors: TOC_SELECTOR,
+      container: $articleContent,
+      scrollTarget: hasSidebar ? '.js-page-main' : null,
+      scroller: hasSidebar ? '.js-page-main' : null,
+      disabled: tocDisabled
+    });
+
+    $window.on('resize', window.throttle(function() {
+      tocDisabled = disabled();
+      toc && toc.setOptions({
+        disabled: tocDisabled
+      });
+    }, 100));
+
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $window = $(window), $pageFooter = $('.js-page-footer');
+    var $pageAside = $('.js-page-aside');
+    var affix;
+    var tocDisabled = false;
+    var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+
+    affix = $pageAside.affix({
+      offsetBottom: $pageFooter.outerHeight(),
+      scrollTarget: hasSidebar ? '.js-page-main' : null,
+      scroller: hasSidebar ? '.js-page-main' : null,
+      scroll: hasSidebar ? $('.js-page-main').children() : null,
+      disabled: tocDisabled
+    });
+
+    $window.on('resize', window.throttle(function() {
+      affix && affix.setOptions({
+        disabled: tocDisabled
+      });
+    }, 100));
+
+    window.pageAsideAffix = affix;
+  });
+})();
+</script>
+    </div>
+    <script>(function () {
+  var $root = document.getElementsByClassName('root')[0];
+  if (window.hasEvent('touchstart')) {
+    $root.dataset.isTouch = true;
+    document.addEventListener('touchstart', function(){}, false);
+  }
+})();
+</script>
+  </body>
+</html>
+
