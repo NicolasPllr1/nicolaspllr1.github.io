@@ -19,7 +19,7 @@ jobs:
           hugo-version: '0.91.2'  # Specify the Hugo version you are using
 
       - name: Build Hugo site
-        run: hugo --minify  # Builds your site and minifies the output
+        run: hugo --minify --config hugo.yaml   # Builds your site and minifies the output
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
