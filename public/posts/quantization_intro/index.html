@@ -208,6 +208,11 @@ Case study : 70B model Consider the new Llama 3 70B."/>
                 </a>
             </li>
             <li>
+                <a href="https://nicolaspllr1.github.io/search/" title="Search">
+                    <span>Search</span>
+                </a>
+            </li>
+            <li>
                 <a href="https://nicolaspllr1.github.io/about/" title="About">
                     <span>About</span>
                 </a>
@@ -299,16 +304,16 @@ $$</p>
 <p>Pay attention to the y-axis log scale. It indicates the parameter count order of magnitude - OOM. Notice how the slope is increasing.  On this figure, every vertical increment represent a gain of a full order of magnitude !</p>
 <p>Meaning across the board,  models have been gaining orders of magnitudes more parameters and this increase in size has been accelerating</p>
 <p><strong>Natural language processing</strong> Consider the GPT series trained by OpenAI :</p>
-<figure>
-    <img loading="lazy" src="/images/GPTs_timelmine_summary.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/GPTs_timelmine_summary.png#center"
          alt="GPTs timeline"/> <figcaption>
             <p>Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog posts</p>
         </figcaption>
 </figure>
 
 <p>Gaining 3 OOMs was achieved in ~ 2 years.</p>
-<figure>
-    <img loading="lazy" src="/images/gpt_series_OOMs_screen.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/gpt_series_OOMs_screen.png#center"
          alt="GPTs sizes"/> <figcaption>
             <p>Quick drawing I made</p>
         </figcaption>
@@ -364,8 +369,8 @@ $$</p>
 </table>
 <p>In 2024, almost all models have a parameter count in the billions ! Models having less than 10 billions parameters are often considered &ldquo;small&rdquo;  ! For instance, the release of llama 3 8B has been much appreciated as its size makes it relatively small in the modern context of LLMs and it has been trained a lot. Making smaller models more capable is a recent trend that seems to be gaining traction. Andrej Karpathy for one has been pushing for smaller yet capable models and the recent <a href="https://arxiv.org/abs/2404.14219">Phi-3</a> model for example drives in this direction.</p>
 <p><strong>Computer vision</strong> Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —&gt;AlexNet —&gt; ResNets, YOLOs —&gt; ViTs</p>
-<figure>
-    <img loading="lazy" src="/images/landmark_models_cv_screen.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/landmark_models_cv_screen.png#center"
          alt="Landmark models in computer vision - timeline"/> <figcaption>
             <p>Timeline I made. See the increasing number of parameters :)</p>
         </figcaption>
@@ -377,8 +382,8 @@ $$</p>
 <p>I won&rsquo;t deep dive into this fascinating topic here - maybe in a future post :) .</p>
 <p>If you want to get started, EpochAI literature <a href="https://epochai.org/blog/scaling-laws-literature-review">review</a> looks great <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>.</p>
 <p>On a personal note, I would recommend paper-wise reading OpenAI&rsquo;s 2020 publications where they study <a href="https://arxiv.org/abs/2001.08361">scaling laws for GPTs performing language</a> modeling up to 1B models, and then explore how their findings <a href="https://arxiv.org/abs/2010.14701">generalize to other AI tasks</a>.</p>
-<figure>
-    <img loading="lazy" src="/images/openAI_power_laws.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/openAI_power_laws.png#center"
          alt="OpenAI scaling laws - power law"/> <figcaption>
             <p>Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above</p>
         </figcaption>
@@ -408,8 +413,8 @@ $$</p>
 <p>Mental model on “compute” :</p>
 <p>$$\text{compute} \sim \text{data} \times \text{params} \sim \text{params}$$</p>
 <p>See below the consequence of larger models (and larger training datasets) on compute costs :</p>
-<figure>
-    <img loading="lazy" src="/images/compute-trends.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/compute-trends.png#center"
          alt="EpochAI compute trend figure"/> <figcaption>
             <p>Compute is driven by model and dataset sizes (source : Epoch AI &lt;3)</p>
         </figcaption>
@@ -417,8 +422,8 @@ $$</p>
 
 <p>The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the <a href="https://arxiv.org/abs/2307.09288">llama 2 paper</a>, the training of the Llama 2 series required  3,311,616 &gt; 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —&gt; think a cluster of 6,000 A100s working full-time for 12 days.</p>
 <p>Karpathy in his <a href="https://youtu.be/zjkBMFhNj_g?si=dqVGfCspOohoCps8&amp;t=364">intro talk to LLMs</a>, these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …</p>
-<figure>
-    <img loading="lazy" src="/images/karpathy_llama2_rookie_numbers.png"
+<figure class="align-center ">
+    <img loading="lazy" src="/images/karpathy_llama2_rookie_numbers.png#center"
          alt="Screenshot from Karpathy&#39;s video - llama2 rookie numbers"/> <figcaption>
             <p>Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”</p>
         </figcaption>

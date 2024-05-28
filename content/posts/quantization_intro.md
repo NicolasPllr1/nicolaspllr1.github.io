@@ -55,6 +55,7 @@ figure
 src="/images/GPTs_timelmine_summary.png"
 alt="GPTs timeline"
 caption="Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog posts"
+align="center"
 >}}
 
 Gaining 3 OOMs was achieved in ~ 2 years.
@@ -64,6 +65,7 @@ figure
 src="/images/gpt_series_OOMs_screen.png"
 alt="GPTs sizes"
 caption="Quick drawing I made"
+align="center"
 >}}
 
 Mid 2018, OpenAI released GPT-1 with ~100M params [^3]. Next in 2019, they progressively released the GPT-2 models. The largest GPT-2 at 1.5B params was 10x larger than GPT-1 . Next mid 2020 they announced GPT-3 - but did not release the weights this time 😢 - with an outstanding size of 175B parameters. Meaning ~100x GPT-2 size and 10x larger than any dense model at the time. Finally in March 2024 they announced GPT-4. Although this time they did not publicly disclose its architecture, it is rumored to be a 1.7T MoE so again a 10x increase in size compared to GPT-3 [^4].
@@ -89,6 +91,7 @@ figure
 src="/images/landmark_models_cv_screen.png"
 alt="Landmark models in computer vision - timeline"
 caption="Timeline I made. See the increasing number of parameters :)"
+align="center"
 >}}
 
 In short, models sizes across the board in the AI landscape have been exploding.     And why you may ask ?
@@ -108,6 +111,7 @@ figure
 src="/images/openAI_power_laws.png"
 alt="OpenAI scaling laws - power law"
 caption="Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above"
+align="center"
 >}}
 
 Finally, the 2022 [Chinchilla paper](https://arxiv.org/abs/2203.15556) which provides more precise scaling laws than OpenAI's and estimates “compute optimal” training recipes.
@@ -147,6 +151,7 @@ figure
 src="/images/compute-trends.png"
 alt="EpochAI compute trend figure"
 caption="Compute is driven by model and dataset sizes (source : Epoch AI <3)"
+align="center"
 >}}
 
 The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the [llama 2 paper](https://arxiv.org/abs/2307.09288), the training of the Llama 2 series required  3,311,616 > 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —> think a cluster of 6,000 A100s working full-time for 12 days.
@@ -158,6 +163,7 @@ figure
 src="/images/karpathy_llama2_rookie_numbers.png"
 alt="Screenshot from Karpathy's video - llama2 rookie numbers"
 caption="Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”"
+align="center"
 >}}
 
 Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs [^7]. Maintaining the good health of such clusters becomes a technical challenge as discussed [here for example](https://twitter.com/karpathy/status/1765424847705047247).

@@ -38,6 +38,11 @@ menu:
       url: "archives/"
       weight: 2
 
+    - identifier: "seach"
+      name: "Search"
+      url: "search/"
+      weight: 3
+
     - identifier: "about"
       name: "About"
       url: "about/"
