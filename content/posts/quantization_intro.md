@@ -51,7 +51,7 @@ Meaning across the board,  models have been gaining orders of magnitudes more pa
 **Natural language processing** Consider the GPT series trained by OpenAI :
 
 {{<
-imageWithCaption
+figure
 src="/images/GPTs_timelmine_summary.png"
 alt="GPTs timeline"
 caption="Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog posts"
@@ -60,7 +60,7 @@ caption="Quick drawing I made - these GPTs sizes are well know as they were disc
 Gaining 3 OOMs was achieved in ~ 2 years.
 
 {{<
-imageWithCaption
+figure
 src="/images/gpt_series_OOMs_screen.png"
 alt="GPTs sizes"
 caption="Quick drawing I made"
@@ -85,7 +85,7 @@ In 2024, almost all models have a parameter count in the billions ! Models havin
 **Computer vision** Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —>AlexNet —> ResNets, YOLOs —> ViTs
 
 {{<
-imageWithCaption
+figure
 src="/images/landmark_models_cv_screen.png"
 alt="Landmark models in computer vision - timeline"
 caption="Timeline I made. See the increasing number of parameters :)"
@@ -104,7 +104,7 @@ If you want to get started, EpochAI literature [review](https://epochai.org/blog
 On a personal note, I would recommend paper-wise reading OpenAI's 2020 publications where they study [scaling laws for GPTs performing language](https://arxiv.org/abs/2001.08361) modeling up to 1B models, and then explore how their findings [generalize to other AI tasks](https://arxiv.org/abs/2010.14701).
 
 {{<
-imageWithCaption
+figure
 src="/images/openAI_power_laws.png"
 alt="OpenAI scaling laws - power law"
 caption="Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above"
@@ -143,7 +143,7 @@ $$\text{compute} \sim \text{data} \times \text{params} \sim \text{params}$$
 See below the consequence of larger models (and larger training datasets) on compute costs :
 
 {{<
-imageWithCaption
+figure
 src="/images/compute-trends.png"
 alt="EpochAI compute trend figure"
 caption="Compute is driven by model and dataset sizes (source : Epoch AI <3)"
@@ -154,7 +154,7 @@ The computation cost directly translates to the more fundamental energy cost. As
 Karpathy in his [intro talk to LLMs](https://youtu.be/zjkBMFhNj_g?si=dqVGfCspOohoCps8&t=364), these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …
 
 {{<
-imageWithCaption
+figure
 src="/images/karpathy_llama2_rookie_numbers.png"
 alt="Screenshot from Karpathy's video - llama2 rookie numbers"
 caption="Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”"
