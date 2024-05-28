@@ -24,7 +24,12 @@ params:
       url: "https://github.com/NicolasPllr1"
     - name: "Twitter"
       url: "https://twitter.com/nicolas_clark2"
-
+        
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
 
 menu:
   main:
