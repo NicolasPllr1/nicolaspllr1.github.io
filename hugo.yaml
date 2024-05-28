@@ -14,16 +14,20 @@ params:
   ShowReadingTime: true
   math: mathjax # "mathjax" "katex"
 
+pygmentsCodeFences: true
+pygmentsUseClasses: true
+pygmentsStyle: "monokai"  # any Chroma style 
 
-  # Home page header
-  homeInfoParams:
-    Title: Welcome to Nicolas' Blog
-    Content: AI, maths, jiu-jitsu mix
-  socialIcons:
-    - name: "GitHub"
-      url: "https://github.com/NicolasPllr1"
-    - name: "Twitter"
-      url: "https://twitter.com/nicolas_clark2"
+
+# Home page header
+homeInfoParams:
+  Title: Welcome to Nicolas' Blog
+  Content: AI, maths, jiu-jitsu mix
+socialIcons:
+  - name: "GitHub"
+    url: "https://github.com/NicolasPllr1"
+  - name: "Twitter"
+    url: "https://twitter.com/nicolas_clark2"
         
 outputs:
   home:
