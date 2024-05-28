@@ -4,6 +4,7 @@ date = 2024-05-23T20:31:19+02:00
 draft = false
 author = "Nicolas Pellerin"
 math = "mathjax"
+tags = ["AI", "quantization"]
 +++
 
 ![Cute llama lifting weights - courtesy of DALL-E 3](/images/cute_llama.webp)
