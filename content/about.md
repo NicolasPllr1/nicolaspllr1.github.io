@@ -1,6 +1,6 @@
 ---
 title: "About"
-layout: "about"
+#layout: "about"
 url: "/about/"
 summary: about
 ShowToc: false
