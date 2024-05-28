@@ -43,7 +43,7 @@ menu:
       url: "archives/"
       weight: 2
 
-    - identifier: "seach"
+    - identifier: "search"
       name: "Search"
       url: "search/"
       weight: 3
