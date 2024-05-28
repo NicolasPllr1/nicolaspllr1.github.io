@@ -26,23 +26,6 @@ params:
       url: "https://twitter.com/nicolas_clark2"
 
 
-  # Search  
-  outputs:
-  home:
-    - HTML
-    - RSS
-    - JSON # necessary for search
-
-  fuseOpts:
-    isCaseSensitive: false
-    shouldSort: true
-    location: 0
-    distance: 1000
-    threshold: 0.4
-    minMatchCharLength: 0
-    # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
-    keys: ["title", "permalink", "summary", "content"]
-
 menu:
   main:
     - identifier: "home"
@@ -54,11 +37,6 @@ menu:
       name: "Archives"
       url: "archives/"
       weight: 2
-
-    - identifier: "search"
-      name: "Search"
-      url: "search/"
-      weight: 3
 
     - identifier: "about"
       name: "About"
