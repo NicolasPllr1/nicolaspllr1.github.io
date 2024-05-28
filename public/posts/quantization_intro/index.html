@@ -7,10 +7,10 @@
 <meta name="robots" content="noindex, nofollow">
 <title>What is quantization in modern AI ? | Nicolas&#39; Blog</title>
 <meta name="keywords" content="">
-<meta name="description" content="What is quantization ? &lsquo;Quantization&rsquo; refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
-$$ \text{Quantization} \sim \text{reducing the memory footprint of models} $$
-Consider the new Llama 3 70B.
-If you load it in 32-bit precision on your GPU 1, it will require around (32 / 8) * 70 = 280 GB of VRAM 🥶.">
+<meta name="description" content="What is quantization ? First definition Quantization refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
+$$ \text{Quantization} \ \approx \ \searrow \ \text{memory footprint of models} $$
+More precisely, this reduction in memory size will be achieved by compressing models weights - or parameters if you prefer.
+Case study : 70B model Consider the new Llama 3 70B.">
 <meta name="author" content="Nicolas Pellerin">
 <link rel="canonical" href="http://localhost:1313/posts/quantization_intro/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.b609c58d5c11bb90b1a54e04005d74ad1ddf22165eb79f5533967e57df9c3b50.css" integrity="sha256-tgnFjVwRu5CxpU4EAF10rR3fIhZet59VM5Z&#43;V9&#43;cO1A=" rel="preload stylesheet" as="style">
@@ -169,9 +169,17 @@ If you load it in 32-bit precision on your GPU 1, it will require around (32 / 8
                     <a href="#what-is-quantization-" aria-label="What is quantization ?">What is quantization ?</a><ul>
                         
                 <li>
+                    <a href="#first-definition" aria-label="First definition">First definition</a></li>
+                <li>
+                    <a href="#case-study--70b-model" aria-label="Case study : 70B model">Case study : 70B model</a></li></ul>
+                </li>
+                <li>
+                    <a href="#modern-context" aria-label="Modern context">Modern context</a><ul>
+                        
+                <li>
                     <a href="#plus-size-ai" aria-label="Plus-size AI">Plus-size AI</a></li>
                 <li>
-                    <a href="#why-" aria-label="Why ?">Why ?</a></li></ul>
+                    <a href="#scaling-laws" aria-label="Scaling laws">Scaling laws</a></li></ul>
                 </li>
                 <li>
                     <a href="#the-costs-of-size" aria-label="The costs of size">The costs of size</a><ul>
@@ -201,14 +209,20 @@ If you load it in 32-bit precision on your GPU 1, it will require around (32 / 8
   <div class="post-content"><p><img loading="lazy" src="/images/cute_llama.webp" alt="Cute llama lifting weights - courtesy of DALL-E 3"  />
 </p>
 <h2 id="what-is-quantization-">What is quantization ?<a hidden class="anchor" aria-hidden="true" href="#what-is-quantization-">#</a></h2>
-<p>&lsquo;Quantization&rsquo; refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.</p>
+<h3 id="first-definition">First definition<a hidden class="anchor" aria-hidden="true" href="#first-definition">#</a></h3>
+<hr>
+<p><em>Quantization</em> refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.</p>
 <p>$$
-\text{Quantization} \sim \text{reducing the memory footprint of models}
+\text{Quantization} \ \approx \ \searrow \ \text{memory footprint of models}
 $$</p>
+<p>More precisely, this reduction in memory size will be achieved by compressing models <em>weights</em> - or <em>parameters</em> if you prefer.</p>
+<hr>
+<h3 id="case-study--70b-model">Case study : 70B model<a hidden class="anchor" aria-hidden="true" href="#case-study--70b-model">#</a></h3>
 <p>Consider the new Llama 3 70B.</p>
 <p>If you load it in 32-bit precision on your GPU <sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>, it will require around (32 / 8) * 70 = 280 GB of VRAM 🥶. For regular folks with access to 1 or 2 consumer GPUs at best, this memory cost is prohibitive and the model cannot be run <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup>.</p>
 <p>This is where quantization kicks in to lower the memory required to run models.</p>
 <p>Before we dive into data types, memory footprint calculations and specific quantization algorithms such as GPTQ, AWQ or HQQ, let&rsquo;s understand why quantization in particular and model compression in general have become critical in modern AI.</p>
+<h2 id="modern-context">Modern context<a hidden class="anchor" aria-hidden="true" href="#modern-context">#</a></h2>
 <h3 id="plus-size-ai">Plus-size AI<a hidden class="anchor" aria-hidden="true" href="#plus-size-ai">#</a></h3>
 <p>AI models have been getting larger and larger.</p>
 <p>Epoch AI has a nice <a href="https://epochai.org/blog/machine-learning-model-sizes-and-the-parameter-gap">paper</a> exploring this trend + their <a href="https://epochai.org/blog/compute-trends">dataset</a> is regularly updated. Look at the evolution of the parameter count from 1950 to 2024 :</p>
@@ -217,52 +231,91 @@ $$</p>
 <p>Pay attention to the y-axis log scale. It indicates the parameter count order of magnitude - OOM. Notice how the slope is increasing.  On this figure, every vertical increment represent a gain of a full order of magnitude !</p>
 <p>Meaning across the board,  models have been gaining orders of magnitudes more parameters and this increase in size has been accelerating</p>
 <p><strong>Natural language processing</strong> Consider the GPT series trained by OpenAI :</p>
-<p><img loading="lazy" src="/images/GPTs_timelmine_summary.png" alt="GPTs timeline"  />
-</p>
-<p>Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog post.</p>
+
+<figure><img src="/images/GPTs_timelmine_summary.png"
+    alt="GPTs timeline"><figcaption>
+      <p>Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog posts</p>
+    </figcaption>
+</figure>
+
 <p>Gaining 3 OOMs was achieved in ~ 2 years.</p>
-<p><img loading="lazy" src="/images/gpt_series_OOMs_screen.png" alt="GPTs sizes"  />
-</p>
+
+<figure><img src="/images/gpt_series_OOMs_screen.png"
+    alt="GPTs sizes"><figcaption>
+      <p>Quick drawing I made</p>
+    </figcaption>
+</figure>
+
 <p>Mid 2018, OpenAI released GPT-1 with ~100M params <sup id="fnref:3"><a href="#fn:3" class="footnote-ref" role="doc-noteref">3</a></sup>. Next in 2019, they progressively released the GPT-2 models. The largest GPT-2 at 1.5B params was 10x larger than GPT-1 . Next mid 2020 they announced GPT-3 - but did not release the weights this time 😢 - with an outstanding size of 175B parameters. Meaning ~100x GPT-2 size and 10x larger than any dense model at the time. Finally in March 2024 they announced GPT-4. Although this time they did not publicly disclose its architecture, it is rumored to be a 1.7T MoE so again a 10x increase in size compared to GPT-3 <sup id="fnref:4"><a href="#fn:4" class="footnote-ref" role="doc-noteref">4</a></sup>.</p>
 <p>And it&rsquo;s not just OpenAI’s GPTs. This trend can be observed across the board in the modern NLP history :</p>
-<p>(landmark model : its parameter count)</p>
-<ul>
-<li>
-<p>1997, original LSTM : ~10k</p>
-</li>
-<li>
-<p>2014, <a href="https://arxiv.org/abs/1409.3215">Seq2Seq</a> LSTM : ~400M</p>
-</li>
-<li>
-<p>2017, original <a href="https://arxiv.org/abs/1706.03762">Transformer</a> : ~200M</p>
-</li>
-<li>
-<p>2018, <a href="https://arxiv.org/abs/1810.04805">BERT</a> : base model at 110M and the large at 340M.</p>
-</li>
-<li>
-<p>early 2023, Llama 1 : 7B, 13B, 33B, and 65B</p>
-</li>
-<li>
-<p>summer 2023, Llama 2 : 7B, 13B and 70B</p>
-</li>
-<li>
-<p>April 2024, Llama 3 : 8B, 70B and the 400B (!) version announced but not released yet</p>
-</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Model</th>
+<th>Parameter Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1997</td>
+<td>Original LSTM</td>
+<td>~10k</td>
+</tr>
+<tr>
+<td>2014</td>
+<td><a href="https://arxiv.org/abs/1409.3215">Seq2Seq LSTM</a></td>
+<td>~400M</td>
+</tr>
+<tr>
+<td>2017</td>
+<td><a href="https://arxiv.org/abs/1706.03762">Original Transformer</a></td>
+<td>~200M</td>
+</tr>
+<tr>
+<td>2018</td>
+<td><a href="https://arxiv.org/abs/1810.04805">BERT Base - Large</a></td>
+<td>110M -  340M</td>
+</tr>
+<tr>
+<td>Early 2023</td>
+<td>Llama 1 series</td>
+<td>7B, 13B, 33B, 65B</td>
+</tr>
+<tr>
+<td>Summer 2023</td>
+<td>Llama 2 series</td>
+<td>7B, 13B, 70B</td>
+</tr>
+<tr>
+<td>April 2024</td>
+<td>Llama 3 series</td>
+<td>8B, 70B, 400B (not released yet)</td>
+</tr>
+</tbody>
+</table>
 <p>In 2024, almost all models have a parameter count in the billions ! Models having less than 10 billions parameters are often considered &ldquo;small&rdquo;  ! For instance, the release of llama 3 8B has been much appreciated as its size makes it relatively small in the modern context of LLMs and it has been trained a lot. Making smaller models more capable is a recent trend that seems to be gaining traction. Andrej Karpathy for one has been pushing for smaller yet capable models and the recent <a href="https://arxiv.org/abs/2404.14219">Phi-3</a> model for example drives in this direction.</p>
 <p><strong>Computer vision</strong> Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —&gt;AlexNet —&gt; ResNets, YOLOs —&gt; ViTs</p>
-<p><img loading="lazy" src="/images/landmark_models_cv_screen.png" alt="Landmark models in computer vision - timeline"  />
-</p>
-<p>Timeline I made. See the increasing number of parameters :)</p>
+
+<figure><img src="/images/landmark_models_cv_screen.png"
+    alt="Landmark models in computer vision - timeline"><figcaption>
+      <p>Timeline I made. See the increasing number of parameters :)</p>
+    </figcaption>
+</figure>
+
 <p>In short, models sizes across the board in the AI landscape have been exploding.     And why you may ask ?</p>
-<h3 id="why-">Why ?<a hidden class="anchor" aria-hidden="true" href="#why-">#</a></h3>
+<h3 id="scaling-laws">Scaling laws<a hidden class="anchor" aria-hidden="true" href="#scaling-laws">#</a></h3>
 <p>One major force that is driving this explosion is scaling laws.</p>
 <p>I won&rsquo;t deep dive into this fascinating topic here - maybe in a future post :) .</p>
 <p>If you want to get started, EpochAI literature <a href="https://epochai.org/blog/scaling-laws-literature-review">review</a> looks great <sup id="fnref:5"><a href="#fn:5" class="footnote-ref" role="doc-noteref">5</a></sup>.</p>
 <p>On a personal note, I would recommend paper-wise reading OpenAI&rsquo;s 2020 publications where they study <a href="https://arxiv.org/abs/2001.08361">scaling laws for GPTs performing language</a> modeling up to 1B models, and then explore how their findings <a href="https://arxiv.org/abs/2010.14701">generalize to other AI tasks</a>.</p>
-<p><img loading="lazy" src="/images/openAI_power_laws.png" alt="OpenAI scaling laws - power law"  />
-</p>
-<p>Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above</p>
+
+<figure><img src="/images/openAI_power_laws.png"
+    alt="OpenAI scaling laws - power law"><figcaption>
+      <p>Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above</p>
+    </figcaption>
+</figure>
+
 <p>Finally, the 2022 <a href="https://arxiv.org/abs/2203.15556">Chinchilla paper</a> which provides more precise scaling laws than OpenAI&rsquo;s and estimates “compute optimal” training recipes.</p>
 <p>And obviously you should read <a href="https://www.dwarkeshpatel.com/p/will-scaling-work">Dwarkesh awesome article on scaling laws</a>. Many many incredible pointers/references/ideas well-articulated and communicated in this piece written as a dialogue.</p>
 <h2 id="the-costs-of-size">The costs of size<a hidden class="anchor" aria-hidden="true" href="#the-costs-of-size">#</a></h2>
@@ -287,14 +340,22 @@ $$</p>
 <p>Mental model on “compute” :</p>
 <p>$$\text{compute} \sim \text{data} \times \text{params} \sim \text{params}$$</p>
 <p>See below the consequence of larger models (and larger training datasets) on compute costs :</p>
-<p><img loading="lazy" src="/images/compute-trends.png" alt="EpochAI compute trend figure"  />
-</p>
-<p>Compute is driven by model and dataset sizes (source : Epoch AI &lt;3)</p>
+
+<figure><img src="/images/compute-trends.png"
+    alt="EpochAI compute trend figure"><figcaption>
+      <p>Compute is driven by model and dataset sizes (source : Epoch AI &lt;3)</p>
+    </figcaption>
+</figure>
+
 <p>The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the <a href="https://arxiv.org/abs/2307.09288">llama 2 paper</a>, the training of the Llama 2 series required  3,311,616 &gt; 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —&gt; think a cluster of 6,000 A100s working full-time for 12 days.</p>
 <p>Karpathy in his <a href="https://youtu.be/zjkBMFhNj_g?si=dqVGfCspOohoCps8&amp;t=364">intro talk to LLMs</a>, these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …</p>
-<p><img loading="lazy" src="/images/karpathy_llama2_rookie_numbers.png" alt="Screenshot from Karpathy&amp;rsquo;s video - llama2 rookie numbers"  />
-</p>
-<p>Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”</p>
+
+<figure><img src="/images/karpathy_llama2_rookie_numbers.png"
+    alt="Screenshot from Karpathy&#39;s video - llama2 rookie numbers"><figcaption>
+      <p>Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”</p>
+    </figcaption>
+</figure>
+
 <p>Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs <sup id="fnref:7"><a href="#fn:7" class="footnote-ref" role="doc-noteref">7</a></sup>. Maintaining the good health of such clusters becomes a technical challenge as discussed <a href="https://twitter.com/karpathy/status/1765424847705047247">here for example</a>.</p>
 <h3 id="estimating-memory-requirement">Estimating memory requirement<a hidden class="anchor" aria-hidden="true" href="#estimating-memory-requirement">#</a></h3>
 <p>As a first estimation :</p>

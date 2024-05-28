@@ -10,11 +10,21 @@ math = "mathjax"
 
 ## What is quantization ?
 
-'Quantization' refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
+### First definition
+
+---
+
+*Quantization* refers to a broad class of algorithms. Their goal is to reduce the memory footprint of models while retaining as much performance as possible.
 
 $$
-    \text{Quantization} \sim \text{reducing the memory footprint of models}
+    \text{Quantization} \ \approx \ \searrow \ \text{memory footprint of models}
 $$
+
+More precisely, this reduction in memory size will be achieved by compressing models *weights* - or *parameters* if you prefer.
+
+---
+
+### Case study : 70B model
 
 Consider the new Llama 3 70B.
 
@@ -23,6 +33,8 @@ If you load it in 32-bit precision on your GPU [^1], it will require around (32 
 This is where quantization kicks in to lower the memory required to run models.
 
 Before we dive into data types, memory footprint calculations and specific quantization algorithms such as GPTQ, AWQ or HQQ, let's understand why quantization in particular and model compression in general have become critical in modern AI.
+
+## Modern context
 
 ### Plus-size AI
 
@@ -38,45 +50,50 @@ Meaning across the board,  models have been gaining orders of magnitudes more pa
 
 **Natural language processing** Consider the GPT series trained by OpenAI :
 
-![GPTs timeline](/images/GPTs_timelmine_summary.png)
-
-Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog post.
+{{<
+imageWithCaption
+src="/images/GPTs_timelmine_summary.png"
+alt="GPTs timeline"
+caption="Quick drawing I made - these GPTs sizes are well know as they were disclosed in OpenAI’s technical reports/papers/blog posts"
+>}}
 
 Gaining 3 OOMs was achieved in ~ 2 years.
 
-![GPTs sizes](/images/gpt_series_OOMs_screen.png)
+{{<
+imageWithCaption
+src="/images/gpt_series_OOMs_screen.png"
+alt="GPTs sizes"
+caption="Quick drawing I made"
+>}}
 
 Mid 2018, OpenAI released GPT-1 with ~100M params [^3]. Next in 2019, they progressively released the GPT-2 models. The largest GPT-2 at 1.5B params was 10x larger than GPT-1 . Next mid 2020 they announced GPT-3 - but did not release the weights this time 😢 - with an outstanding size of 175B parameters. Meaning ~100x GPT-2 size and 10x larger than any dense model at the time. Finally in March 2024 they announced GPT-4. Although this time they did not publicly disclose its architecture, it is rumored to be a 1.7T MoE so again a 10x increase in size compared to GPT-3 [^4].
 
 And it's not just OpenAI’s GPTs. This trend can be observed across the board in the modern NLP history :  
 
-(landmark model : its parameter count)
-
-- 1997, original LSTM : ~10k
-
-- 2014, [Seq2Seq](https://arxiv.org/abs/1409.3215) LSTM : ~400M
-
-- 2017, original [Transformer](https://arxiv.org/abs/1706.03762) : ~200M
-
-- 2018, [BERT](https://arxiv.org/abs/1810.04805) : base model at 110M and the large at 340M.
-
-- early 2023, Llama 1 : 7B, 13B, 33B, and 65B
-
-- summer 2023, Llama 2 : 7B, 13B and 70B
-
-- April 2024, Llama 3 : 8B, 70B and the 400B (!) version announced but not released yet
+| Year       | Model                       | Parameter Count                             |
+|------------|-----------------------------|---------------------------------------------|
+| 1997       | Original LSTM               | ~10k                                        |
+| 2014       | [Seq2Seq LSTM](https://arxiv.org/abs/1409.3215) | ~400M                   |
+| 2017       | [Original Transformer](https://arxiv.org/abs/1706.03762) | ~200M          |
+| 2018       | [BERT Base - Large](https://arxiv.org/abs/1810.04805)   | 110M -  340M    |
+| Early 2023 | Llama 1 series                    | 7B, 13B, 33B, 65B                     |
+| Summer 2023| Llama 2 series                   | 7B, 13B, 70B                           |
+| April 2024 | Llama 3 series                   | 8B, 70B, 400B (not released yet)       |
 
 In 2024, almost all models have a parameter count in the billions ! Models having less than 10 billions parameters are often considered "small"  ! For instance, the release of llama 3 8B has been much appreciated as its size makes it relatively small in the modern context of LLMs and it has been trained a lot. Making smaller models more capable is a recent trend that seems to be gaining traction. Andrej Karpathy for one has been pushing for smaller yet capable models and the recent [Phi-3](https://arxiv.org/abs/2404.14219) model for example drives in this direction.
 
 **Computer vision** Same thing in computer vision although the latest models are not as large as the largest LLMs. Let’s compress aggressively modern computer vision history into a couple of milestone models : LeNet —>AlexNet —> ResNets, YOLOs —> ViTs
 
-![Landmark models in computer vision - timeline](/images/landmark_models_cv_screen.png)
-
-Timeline I made. See the increasing number of parameters :)
+{{<
+imageWithCaption
+src="/images/landmark_models_cv_screen.png"
+alt="Landmark models in computer vision - timeline"
+caption="Timeline I made. See the increasing number of parameters :)"
+>}}
 
 In short, models sizes across the board in the AI landscape have been exploding.     And why you may ask ?
 
-### Why ?
+### Scaling laws
 
 One major force that is driving this explosion is scaling laws.
 
@@ -86,9 +103,12 @@ If you want to get started, EpochAI literature [review](https://epochai.org/blog
 
 On a personal note, I would recommend paper-wise reading OpenAI's 2020 publications where they study [scaling laws for GPTs performing language](https://arxiv.org/abs/2001.08361) modeling up to 1B models, and then explore how their findings [generalize to other AI tasks](https://arxiv.org/abs/2010.14701).
 
-![OpenAI scaling laws - power law](/images/openAI_power_laws.png)
-
-Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above
+{{<
+imageWithCaption
+src="/images/openAI_power_laws.png"
+alt="OpenAI scaling laws - power law"
+caption="Scaling laws beautifully visualized - in OpenAI’s first paper mentioned above"
+>}}
 
 Finally, the 2022 [Chinchilla paper](https://arxiv.org/abs/2203.15556) which provides more precise scaling laws than OpenAI's and estimates “compute optimal” training recipes.
 
@@ -122,17 +142,23 @@ $$\text{compute} \sim \text{data} \times \text{params} \sim \text{params}$$
 
 See below the consequence of larger models (and larger training datasets) on compute costs :
 
-![EpochAI compute trend figure](/images/compute-trends.png)
-
-Compute is driven by model and dataset sizes (source : Epoch AI <3)
+{{<
+imageWithCaption
+src="/images/compute-trends.png"
+alt="EpochAI compute trend figure"
+caption="Compute is driven by model and dataset sizes (source : Epoch AI <3)"
+>}}
 
 The computation cost directly translates to the more fundamental energy cost. As a very concrete example laid out in the [llama 2 paper](https://arxiv.org/abs/2307.09288), the training of the Llama 2 series required  3,311,616 > 3 billions GPU hours - and it’s your A100-with-80-GB kind of GPU hours. They estimated that this amount of compute corresponds to 539 tons of CO2e emitted. The largest llama model - at 70 billions parameters - required ~1,720,000 GPU hours —> think a cluster of 6,000 A100s working full-time for 12 days.
 
 Karpathy in his [intro talk to LLMs](https://youtu.be/zjkBMFhNj_g?si=dqVGfCspOohoCps8&t=364), these are “rookie numbers” by today’s best models standard, “off by a factor of 10 or more” …
 
-![Screenshot from Karpathy's video - llama2 rookie numbers](/images/karpathy_llama2_rookie_numbers.png)
-
-Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”
+{{<
+imageWithCaption
+src="/images/karpathy_llama2_rookie_numbers.png"
+alt="Screenshot from Karpathy's video - llama2 rookie numbers"
+caption="Karpathy : these are ‘“rookie numbers”, “off by a factor of 10 or more”"
+>}}
 
 Training models at this incredible scale requires crazy infrastructures. For the llama series, meta is leveraging 2 clusters totaling 48 000 GPUs [^7]. Maintaining the good health of such clusters becomes a technical challenge as discussed [here for example](https://twitter.com/karpathy/status/1765424847705047247).
 
