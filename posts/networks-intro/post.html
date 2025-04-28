@@ -9,21 +9,23 @@
   <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
 
     <header class="py-10">
-      <nav class="flex flex-row px-4 py-2 justify-between text-xl text-blue-500 bg-accent">
-        <ul class="flex space-x-4">
+      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
+        <ul class="flex space-x-4 items-center">
           <li><a href="/" > home </a></li>
-          <li><a href="/blog.html" class="underline"> writes </a></li>
+          <li><a href="/blog.html"> writes </a></li>
           <li><a href="/reading_list.html" class=""> reads </a></li>
         </ul>
-        <p> cmd+k </p>
+        <p class="info"> cmd+k </p>
       </nav>
     </header>
 
     <main class="flex-grow justify-between">
       <h1 class="mb-4">Easy Intro to Networks and the Internet</h1>
-      <p>April 2025</p>
+      <h3>April 2025</h3>
+      <p class="warning"> ~3k words</p>
       <hr>
-      <p>Before implementing a mini HTTP server (in Rust for more fun), let's make sure we have a decent <strong>mental model for networking</strong>. Before calling high-level APIs - Berkeley sockets style <code>accept</code>, <code>send</code>/<code>recv</code>, <code>connect</code>, ... - let's build our <strong>foundations</strong> first.</p>
+
+      <p class="mt-4">Before implementing a mini HTTP server (in Rust for more fun), let's make sure we have a decent <strong>mental model for networking</strong>. Before calling high-level APIs - Berkeley sockets style <code>accept</code>, <code>send</code>/<code>recv</code>, <code>connect</code>, ... - let's build our <strong>foundations</strong> first.</p>
       <h1 class="text-3xl">Layered Architecture</h1>
       <p>Networks get complicated fast, so their architecture is designed in <em>layers</em>.</p>
       <p>A layer in the network stack does 3 things:
@@ -32,13 +34,28 @@
         - It defines a <em>protocol</em>  to communicate with a peer layer running on another machine - this is "horizontal", happening between two machines</p>
       <p>For example, web apps may speak HTTP with each other - this is their protocol - while vertically interfacing with a lower-level transport layers - typically speaking another protocol like TCP or UDP among themselves.
         In the drawing below, HTTP may be the protocol used by the top layer (layer 3), interfacing with layer 2 using the TCP protocol.
-        <img src="./assets/Layers - Interface and Protocols.svg " width="400"/></p>
-      <p>The distinction between services and protocols is similar to the separation in OOP or APIs more generally between interfaces and "implementation details". In the drawing below, layer k+1 depends on the <em>services</em> exposed by layer k. Given that the interface exposing these services and the services themselves do not change, the protocol used by layers k can be changed: it does not matter from the pov of layer k.
-        <img src="./assets/Layer_ service VS protocol.excalidraw.svg " width="400"/></p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/Layers - Interface and Protocols.svg " width="400" /></div>
+        <p>Interfaces vs Protocols</p>
+      </div>
+
+      <p>The distinction between services and protocols is similar to the separation in OOP or APIs more generally between interfaces and "implementation details". In the drawing below, layer k+1 depends on the <em>services</em> exposed by layer k. Given that the interface exposing these services and the services themselves do not change, the protocol used by layers k can be changed: it does not matter from the pov of layer k.</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/Layer_ service VS protocol.excalidraw.svg " width="400" /></div>
+        <p>Services vs Protocols</p>
+      </div>
+
       <h1 class="text-3xl">From Physics to Apps</h1>
       <h2 class="text-3xl">TCP/IP vs OSI in Short</h2>
       <p>Two important models for networks are the OSI model and the TCP/IP model.</p>
-      <p><img src="./assets/osi_tcpip_layer_mapping.png" width="240"/></p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/osi_tcpip_layer_mapping.png" width="400" /></div>
+        <p>OSI <--> TCP/IP</p>
+      </div>
+
       <p>OSI is a "conceptually cleaner" than TCP/IP - precisely defining services, interfaces and protocols for all its <em>7 layers</em>. But it doesn’t map well onto real-world network implementations.
         In contrast, TCP/IP emerged <em>from</em> real-world networking implementations. It became the dominant model - winning the "<a href="https://en.wikipedia.org/wiki/Protocol_Wars#Internet%E2%80%93OSI_Standards_War">protocol war</a>" -  as it was simpler, already well-implemented and free (see <a href="https://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley sockets</a>).</p>
       <p>We will focus on a mix of the two models, looking at the following layers:</p>
@@ -70,8 +87,13 @@
       </code></pre>
       <p>The header includes essential information like source and destination MAC addresses. The payload is your actual message. Trailers may include things like error-detection codes.</p>
       <p><strong>Encapsulation happens at every layer in the stack</strong>—each layer adds its own header (and sometimes trailer) as the message goes down the stack and removes them as it goes up on the receiving side. This process of adding and removing headers is called <strong>encapsulation and decapsulation</strong>.</p>
-      <p>encapsulation, TCP/IP Illustrated 1:
-        <img src="./assets/encapsulation_tanenbum.png" width="400"/></p>
+      <p>encapsulation, TCP/IP Illustrated 1:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/encapsulation_tanenbum.png" width="400" /></div>
+        <p>OSI <--> TCP/IP</p>
+      </div>
+
       <p>Notes:</p>
       <ol>
         <li><a href="https://en.wikipedia.org/wiki/Protocol_data_unit">PDU</a>: Protocol Data Unit</li>
@@ -81,11 +103,21 @@
           </ul>
         </li>
       </ol>
-      <p>What happens if two devices try to send data at the same time? On older <strong>shared Ethernet</strong> setups (where all machines were wired onto a single cable), this led to collisions—two signals interfering with each other.
-        <img src="./assets/classic_ethernet_tanenbum.png" width="400"/>
-        Protocols like <strong>CSMA/CD</strong> (Carrier Sense Multiple Access with Collision Detection) were designed to handle these situations: devices would listen for activity before sending and retry if they detected a collision.</p>
-      <p>Modern <strong>switched Ethernet</strong> avoids this problem by connecting each device to a central switch, which ensures that messages are forwarded only between the correct sender and receiver ports—removing collisions entirely.
-        <img src="./assets/switched_ethernet_tanenbum.png" width="400"/></p>
+      <p>What happens if two devices try to send data at the same time? On older <strong>shared Ethernet</strong> setups (where all machines were wired onto a single cable), this led to collisions—two signals interfering with each other.</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/classic_ethernet_tanenbum.png" width="400" /></div>
+        <p>Classic Ethernet (old)</p>
+      </div>
+
+      <p>Protocols like <strong>CSMA/CD</strong> (Carrier Sense Multiple Access with Collision Detection) were designed to handle these situations: devices would listen for activity before sending and retry if they detected a collision.</p>
+      <p>Modern <strong>switched Ethernet</strong> avoids this problem by connecting each device to a central switch, which ensures that messages are forwarded only between the correct sender and receiver ports—removing collisions entirely.</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/switched_ethernet_tanenbum.png" width="400" /></div>
+        <p>Switched Ethernet</p>
+      </div>
+
       <p>Beyond sending messages to known MAC addresses, the link layer sometimes needs to <strong>discover</strong> who’s connected locally. Protocols like <strong>ARP</strong> (Address Resolution Protocol) help map an IP address (used at the network layer) to the corresponding MAC address needed at the link layer.</p>
       <p>To keep messages reliable, link-layer frames may also include <strong><a href="https://en.wikipedia.org/wiki/Data_link_layer#Error_detection_and_correction">error detection</a></strong> mechanisms like <strong><a href="https://en.wikipedia.org/wiki/Cyclic_redundancy_check">CRC checksums</a></strong> in the trailer. If corruption is detected, the frame can be dropped and higher layers (like TCP) may request a retransmission.</p>
       <p>The link layer is where the idea of a “network” begins to take shape:</p>
@@ -107,8 +139,13 @@
         <li>a network portion used find the correct LAN within the larger network</li>
         <li>and a host portion used to pinpoint the precise destination machine in the end.</li>
       </ul>
-      <p>Originally, this network/host split was <em>fixed</em>. Nowadays, the split is dynamic. Each IP address is associated to a binary <strong>subnet mask</strong> which defines how much of the address (how many bytes) refers to the network and how much to the host (see class vs classless).
-        <img src="./assets/IP_address_ANDed_with_subnetmask.png" width="400"/></p>
+      <p>Originally, this network/host split was <em>fixed</em>. Nowadays, the split is dynamic. Each IP address is associated to a binary <strong>subnet mask</strong> which defines how much of the address (how many bytes) refers to the network and how much to the host (see class vs classless).</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/IP_address_ANDed_with_subnetmask.png" width="400" /></div>
+        <p>Bitwise AND between IP Address and Subnet Mask</p>
+      </div>
+
       <blockquote>
         <p>Bitwise AND operation on IP address + subnet mask yields the network portion of the address.</p>
       </blockquote>
@@ -123,8 +160,13 @@
       <p>Actually, IP has a mechanism to avoid a packet losing its way and hoping between routers indefinitely. It counts the number of hops the packet has made and cap it at a certain number, the TTL. Each router decrements the TTL value by one. If TTL reaches zero, the packet is dropped (TTL is a <em>hop limit</em>, not a time limit).
         So IP packets stay unchanged besides the TTL (which is decremented) across hops while the inner link header is modified to point to the next machine.</p>
       <hr>
-      <p>This TTL feature is actually used <code>traceroute</code> to detect intermediary routers. See below the hops to go from my computer to example.com:
-        <img src="./assets/traceroute_example_dot_com_dump.png"/></p>
+      <p>This TTL feature is actually used <code>traceroute</code> to detect intermediary routers. See below the hops to go from my computer to example.com:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/traceroute_example_dot_com_dump.png" width="400" /></div>
+        <p>traceroute output from my computer to example-dot-com</p>
+      </div>
+
       <ol>
         <li>my computer --> my internet box (192.168/16 is within <a href="https://en.wikipedia.org/wiki/Private_network#Private_IPv4_addresses">private address space</a>)</li>
         <li>box --> where my fiber ends ("ISP's first point of presence")</li>
@@ -157,42 +199,66 @@
         </li>
       </ul>
       <hr>
+
       <p>However, IP does not add any additional features of robustness/reliability: packets may be duplicated or received out of order, if they are received at all: connectionless, <em>datagrams</em>. Packets may also be fragmented into smaller packets, further complicating the delivery.
         IP is even stateless: packets are dealt with independantly of each other. There is no memory of previous packets or information about future ones. This stands in stark contrast to what the next layer does when using TCP.</p>
+
       <blockquote>
         <p>IP address, inter-network, routing, connectionless, stateless, datagrams, packets</p>
       </blockquote>
+
       <h2 class="text-3xl">4. Transport Layer: Reliability &#x26; Connections (TCP, UDP)</h2>
+
       <p>With the network layer on top of the link and physical, we can route packets from computer A to computer B. But communication is unreliable. How do we add reliability to communications over unreliable channels ? How can a process on machine A "connect" with another process running on machine B ?</p>
+
       <hr>
+
       <p>The transport layer, with TCP, adds reliability features to the network layer.  Actually, TCP provides a <em>best effort</em> at reliability (acknowledgements, retransmissions). This means it will detect communication failures and will warn the application using its service about them. TCP also controls the <a href="https://hpbn.co/building-blocks-of-tcp/#congestion-avoidance-and-control"><em>flow</em> of communication</a> to avoid both:</p>
+
       <ul>
         <li>overwhelming the receiver (control flow)</li>
         <li>overwhelming the network itself (<em>congestion</em> control)
           UDP, on the other hand, does not add these and can be though of as a thin wrapper protocol over IP - a "<a href="https://hpbn.co/building-blocks-of-udp/#null-protocol-services">null protocol</a>". With UDP, the communication stays connectionless, while TCP "elevates" the network datagram service to <a href="https://en.wikipedia.org/wiki/Virtual_circuit#Layer_4_virtual_circuits">virtual-circuit</a>esque segments.</li>
       </ul>
+
       <p>Note that TCP is not strictly superior over UDP: the added reliability comes at some <a href="https://hpbn.co/building-blocks-of-tcp/">performance costs</a>  - setting up the connection (3-way handshakes), or sending additional messages to acknowledge receptions for instance, see ACKs - which may be well worth the price in some situation and not in others. For example UDP is often chosen for real-time applications like video streaming where low latency matters more than reliability.</p>
-      <p>TCP three-way handshake with SYNs and ACKs:
-        <img src="https://hpbn.co/assets/diagrams/eefa1170a673da0140efe1ece7a2884b.svg" alt="TCP three-way handshake|400"></p>
+      <p>TCP three-way handshake with SYNs and ACKs:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="https://hpbn.co/assets/diagrams/eefa1170a673da0140efe1ece7a2884b.svg" width="400" alt="TCP three-way handshake|400"/></div>
+        <p>TCP Three-Way Handshake</p>
+      </div>
+
       <p>TCP and UDP also add the notion of <em>ports</em> which allow communication not only to happen between two computers, but actually between two processes: more precision. Think of ports are like an additional argument of type integer in methods like <code>send</code> and <code>receive</code>.
         So addressing can now use IP to pinpoint a machine on the larger network and the port number to add extra information about which process exactly should be receiving the message.</p>
-      <p><img src="./assets/got4o_drawing_TCP_byte_stream_abstraction.png" width="400"/>a</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/got4o_drawing_TCP_byte_stream_abstraction.png" width="400" alt="o1 drawing of TCP byte stream abstraction|400"/></div>
+        <p>o1 drawing: TCP Byte Stream Abstraction between Two Processes</p>
+      </div>
+
       <blockquote>
         <p>Think: <em>“Make sure this stream of bytes gets from this app on my laptop to the right app on the server.”</em></p>
       </blockquote>
       <blockquote>
         <p>TCP, virtual circuits, reliability, segments, ports</p>
       </blockquote>
+
       <h2 class="text-3xl">5. Application Layer: From Bytes to Meaning (HTTP, DNS, SMTP...)</h2>
+
       <p>And finally, application layer protocols like HTTP or DNS can focus on  how data is structured and interpreted by applications</p>
       <hr>
       <p>Application layer defines the shape and meaning of the messages apps exchange to communicate information. This information is wrapped in the many lower-layer protocol headers and is, generally, only visible at the end to the higher level application that sent/received this content to begin with.</p>
+
       <blockquote>
         <p>Your browser sends HTTP GET request bytes via TCP, receiving bytes that represent the HTML page.</p>
       </blockquote>
+
       <p>The application layer is where the semantics of application is written: for example HTTP to request the content of a web-page, or SMTP to get/send emails.</p>
       <p>Application protocols and standards are defined in public specification documents (see RFCs) and are built on top of lower layers. For instance, HTTP assumes a TCP service.</p>
+
       <h1 class="text-3xl">Layer Interaction: Data Flow through the Stack</h1>
+
       <p>Together, these layers form an abstraction tower that allows applications running on distant computers to communicate over a diverse and messy physical infrastructure.</p>
       <p>Summary of each layer unit of communication with some protocol examples:</p>
       <table border="1">
@@ -238,22 +304,40 @@
         </tbody>
       </table>
       <p>Let's see an example. When you browse a web page, your browser uses HTTP to formulate its requests to a server.</p>
-      <p>See client-server situation:
-        <img src="./assets/client_server_tanenbum.png" width="400"/></p>
+      <p>See client-server situation:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/client_server_tanenbum.png" width="400"/></div> 
+        <p>Tanenbum Book Illustration: Client/Server Situation</p>
+      </div>
+
       <p>These requests travels over TCP/IP. IP handles addressing across networks; TCP ensures reliable delivery. Lower layers like Ethernet handle local transfers, using MAC addresses. Auxiliary protocols are often involved - for instance to "discover" the IP-to-MAC address mappings (e.g. ARP).</p>
       <p>In this sense, TCP and IP from the fundation of the internet, on top of which HTTP - an "app" relative to the network - can run.</p>
-      <p>See the protocol stack involved for the client/server communication, with routers in between:
-        <img src="./assets/encapsulation_journey_tanenbum.png" width="400"/></p>
-      <p>Wikipedia illustration of data encapsulation with colors:
-        <img src="./assets/wikipedia_encapsulation_with_colors.png" width="400"/></p>
+      <p>See the protocol stack involved for the client/server communication, with routers in between:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/encapsulation_journey_tanenbum.png" width="400"/></div> 
+        <p>Tanenbum Book Illustration: Chaining Encapsulations through the Layers</p>
+      </div>
+
+      <p>Wikipedia illustration of data encapsulation with colors:</p>
+
+      <div class="grid grid-cols-1 justify-items-center my-4">
+        <div><img src="./assets/wikipedia_encapsulation_with_colors.png" width="400"/></div> 
+        <p>Wikipedia Illustration: Payload Encapsulation through the Layers</p>
+      </div>
+
       <p>Data flows down the stack on the one machine, is sent physically, and then flows up the stack on the next machine. This happens multiple times until the message arrives at its final destination (the server).
         In between the client and the server, a number of intermediary machines like routers will relay the messages forward closer to destination. These intermediate nodes need only read and (re)write only relevant lower-layer headers to forward messages.</p>
       <p>During communication, every layer assumes the existance of its "peer" on the destination machine. This "peer" is another instance of the layer, simply running on another computer. Both should therefore "speak" the same protocol.
         Layers can safely add additional information to messages by encapsulating them with headers (and sometimes trailers) - trusting that the peer layer will correctly decode the new header/trailer and process them properly, as specified by their protocol.</p>
       <p>Once a layer completes its task, it typically passes control or returns the results back up to the layer above it, which originally requested its services</p>
+
       <h1 class="text-3xl">Follow-Up: Rust Impl. of Mini HTTP-Server</h1>
+
       <p>Follow-up blog post on my mini-HTTP server implementation in Rust.
         Will cover :</p>
+
       <ul>
         <li><strong>Performance</strong>: Multi-threading and asynchronous programming; memory efficiency; fast, zero-copy parsing; and buffering strategies.</li>
         <li><strong>HTTP compliance</strong>: Supporting the most essential parts of the HTTP spec—request parsing, response formatting, status codes, headers, and connection management.</li>
@@ -266,7 +350,9 @@
           </ul>
         </li>
       </ul>
+
       <h2 class="text-3xl">Learning Resources</h2>
+
       <ul>
         <li>
           <p><strong>Books</strong>:</p>

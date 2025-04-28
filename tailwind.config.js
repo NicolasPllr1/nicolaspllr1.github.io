@@ -23,27 +23,23 @@ module.exports = {
             marginBottom: '0.75rem', /* mb-3 */
           },
           'h3, .h3': {
-            color: '#7aa2f7',
+            color: '#bb9af7',
             marginBottom: '0.5rem', /* mb-2 */
           },
           'h4, .h4': {
-            color: '#6d91de',
+            color: '#7aa2f7',
             marginBottom: '0.5rem',
           },
+          'p, .p, li, .li': {
+            color: '#cfc9c2'
+          },
 
-          // // Links
-          // 'a, .link': {
-          //   color: '#73daca',
-          //   '&:hover': {
-          //     textDecoration: 'underline'
-          //   }
-          // },
           // Links
           'a, .link': {
-            color: '#73daca',
+            color: '#7aa2f7',
             transition: 'color 0.1s ease',
             '&:hover': {
-              color: '#5db9a7', /* Slightly darker version of the link color */
+              color: '#6d91de', /* Slightly darker version of the link color */
               // textDecoration: 'underline'
             }
           },
@@ -89,7 +85,7 @@ module.exports = {
             color: '#9ece6a'
           },
           '.info': {
-            color: '#7dcfff'
+            color: '#bb9af7'
           },
           '.error': {
             color: '#f7768e'

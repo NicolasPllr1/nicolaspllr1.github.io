@@ -9,28 +9,36 @@
   <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
 
     <header class="py-10">
-      <nav class="flex flex-row px-4 py-2 justify-between text-xl text-blue-500 bg-accent">
-        <ul class="flex space-x-4">
+      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
+        <ul class="flex space-x-4 items-center">
           <li><a href="/" class=""> home </a></li>
-          <li><a href="./blog.html" class="underline"> writes </a></li>
+          <li><a href="./blog.html" class="underline underline-offset-2"> writes </a></li>
           <li><a href="./reading_list.html" class=""> reads </a></li>
         </ul>
-        <p> cmd+k </p>
+        <p class="info"> cmd+k </p>
       </nav>
     </header>
 
     <main class="flex-grow justify-between">
 
       <div class="space-y-4">
-        <div onclick="location.href='posts/networks-intro/post.html'" class="cursor-pointer hover:bg-gray-100 p-4 rounded transition">
-          <h2 class="text-xl font-bold">Intro to Networks</h2>
+        <div onclick="location.href='posts/networks-intro/post.html'"
+
+          class="group cursor-pointer bg-accent p-4 rounded hover:shadow-md border border-secondary hover:border-[#3d59a1]">
+          <h3 class="text-2xl ml-2">Intro to Networks</h3>
           <p>Before calling high-level APIs - Berkeley sockets style <code>accept</code>, <code>send</code>/<code>recv</code>, <code>connect</code>, ... - let's build our <strong>foundations</strong> first.</p>
         </div>
 
-        <div onclick="location.href='posts/post-2/post.html'" class="cursor-pointer hover:bg-gray-100 p-4 rounded transition">
-          <h2 class="text-xl font-bold">Post 2 Title</h2>
+        <div onclick="location.href='posts/post-2/post.html'" class="group cursor-pointer bg-accent p-4 rounded hover:shadow-md border border-secondary hover:border-[#3d59a1]">
+          <h3 class="text-2xl ml-2">Post 2 Title</h3>
           <p>A little summary for post 2, some teaser text...</p>
         </div>
+
+        <div onclick="location.href='posts/post-2/post.html'" class="group cursor-pointer bg-accent p-4 rounded hover:shadow-md border border-secondary hover:border-[#3d59a1]">
+          <h3 class="text-2xl ml-2">Post 2 Title</h3>
+          <p>A little summary for post 2, some teaser text...</p>
+        </div>
+
     </main>
 
     <footer class="py-10 text-xl">

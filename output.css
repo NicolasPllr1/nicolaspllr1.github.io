@@ -44,9 +44,7 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-    --color-blue-500: oklch(62.3% 0.214 259.815);
     --color-blue-800: oklch(42.4% 0.199 265.638);
-    --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-700: oklch(37.3% 0.034 259.733);
     --color-gray-800: oklch(27.8% 0.033 256.848);
@@ -65,7 +63,6 @@
     --text-3xl: 1.875rem;
     --text-3xl--line-height: calc(2.25 / 1.875);
     --font-weight-medium: 500;
-    --font-weight-bold: 700;
     --radius-lg: 0.5rem;
     --blur-sm: 8px;
     --default-transition-duration: 150ms;
@@ -247,8 +244,14 @@
   .mx-auto {
     margin-inline: auto;
   }
+  .my-4 {
+    margin-block: calc(var(--spacing) * 4);
+  }
   .mt-1 {
     margin-top: calc(var(--spacing) * 1);
+  }
+  .mt-4 {
+    margin-top: calc(var(--spacing) * 4);
   }
   .mt-20 {
     margin-top: calc(var(--spacing) * 20);
@@ -270,18 +273,21 @@
       margin-bottom: 0.75rem;
     }
     h3, .h3 {
-      color: #7aa2f7;
+      color: #bb9af7;
       margin-bottom: 0.5rem;
     }
     h4, .h4 {
-      color: #6d91de;
+      color: #7aa2f7;
       margin-bottom: 0.5rem;
     }
+    p, .p, li, .li {
+      color: #cfc9c2;
+    }
     a, .link {
-      color: #73daca;
+      color: #7aa2f7;
       transition: color 0.1s ease;
       &:hover {
-        color: #5db9a7;
+        color: #6d91de;
       }
     }
     .border-tokyo {
@@ -318,7 +324,7 @@
       color: #9ece6a;
     }
     .info {
-      color: #7dcfff;
+      color: #bb9af7;
     }
     .error {
       color: #f7768e;
@@ -341,6 +347,9 @@
   }
   .flex {
     display: flex;
+  }
+  .grid {
+    display: grid;
   }
   .hidden {
     display: none;
@@ -369,6 +378,9 @@
   .cursor-pointer {
     cursor: pointer;
   }
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
   .flex-col {
     flex-direction: column;
   }
@@ -386,6 +398,9 @@
   }
   .justify-center {
     justify-content: center;
+  }
+  .justify-items-center {
+    justify-items: center;
   }
   .space-y-4 {
     :where(& > :not(:last-child)) {
@@ -465,16 +480,9 @@
     font-size: var(--text-xl);
     line-height: var(--tw-leading, var(--text-xl--line-height));
   }
-  .font-bold {
-    --tw-font-weight: var(--font-weight-bold);
-    font-weight: var(--font-weight-bold);
-  }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium);
     font-weight: var(--font-weight-medium);
-  }
-  .text-blue-500 {
-    color: var(--color-blue-500);
   }
   .text-gray-400 {
     color: var(--color-gray-400);
@@ -487,6 +495,9 @@
   }
   .underline {
     text-decoration-line: underline;
+  }
+  .underline-offset-2 {
+    text-underline-offset: 2px;
   }
   .shadow-lg {
     --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 4px 6px -4px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
@@ -506,10 +517,10 @@
     --tw-outline-style: none;
     outline-style: none;
   }
-  .hover\:bg-gray-100 {
+  .hover\:border-\[\#3d59a1\] {
     &:hover {
       @media (hover: hover) {
-        background-color: var(--color-gray-100);
+        border-color: #3d59a1;
       }
     }
   }
@@ -520,22 +531,36 @@
       }
     }
   }
+  .hover\:shadow-md {
+    &:hover {
+      @media (hover: hover) {
+        --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+      }
+    }
+  }
 }
 @layer base {
   h1, .h1 {
     margin: calc(var(--spacing) * 4);
     font-size: var(--text-3xl);
     line-height: var(--tw-leading, var(--text-3xl--line-height));
+    margin: calc(var(--spacing) * 2);
+  }
+  hr, .hr {
+    margin: calc(var(--spacing) * 2);
   }
   h2, .h2 {
     margin: calc(var(--spacing) * 4);
     font-size: var(--text-2xl);
     line-height: var(--tw-leading, var(--text-2xl--line-height));
+    margin: calc(var(--spacing) * 2);
   }
   h3, .h3 {
     margin: calc(var(--spacing) * 4);
     font-size: var(--text-xl);
     line-height: var(--tw-leading, var(--text-xl--line-height));
+    margin: calc(var(--spacing) * 2);
   }
   p, .paragraph {
     margin: calc(var(--spacing) * 2);
@@ -548,9 +573,6 @@
   }
   main ul {
     margin-bottom: calc(var(--spacing) * 4);
-  }
-  img, .img {
-    margin: calc(var(--spacing) * 4);
   }
 }
 @property --tw-rotate-x {
