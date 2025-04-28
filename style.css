@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@config "./tailwind.config.js";
+
+@layer base {
+  h1, .h1 {
+    @apply text-3xl m-4;
+  }
+
+  h2, .h2 {
+    @apply text-2xl m-4;
+  }
+
+  h3, .h3 {
+    @apply text-xl m-4;
+  }
+
+  p, .paragraph {
+    @apply  m-2;
+  }
+
+  main li {
+    @apply ml-6 list-disc text-base;
+  }
+
+  main ul {
+    @apply mb-4;
+  }
+
+  img, .img {
+    @apply m-4;
+  }
+}
