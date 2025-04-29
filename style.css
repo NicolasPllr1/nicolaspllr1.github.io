@@ -3,8 +3,7 @@
 
 @layer base {
   h1, .h1 {
-    @apply text-3xl m-4;
-    @apply m-2;
+    @apply text-3xl my-8 mx-2;
   }
 
   hr, .hr {
@@ -12,13 +11,11 @@
   }
 
   h2, .h2 {
-    @apply text-2xl m-4;
-    @apply m-2;
+    @apply text-2xl my-4 mx-2;
   }
 
   h3, .h3 {
-    @apply text-xl m-4;
-    @apply m-2;
+    @apply text-xl my-4 mx-2;
   }
 
   p, .paragraph {
@@ -31,5 +28,9 @@
 
   main ul {
     @apply mb-4
+  }
+
+  blockquote, .blockquote {
+    @apply mb-4;
   }
 }

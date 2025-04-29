@@ -238,8 +238,14 @@
   .z-50 {
     z-index: 50;
   }
+  .m-0 {
+    margin: calc(var(--spacing) * 0);
+  }
   .m-4 {
     margin: calc(var(--spacing) * 4);
+  }
+  .mx-2 {
+    margin-inline: calc(var(--spacing) * 2);
   }
   .mx-auto {
     margin-inline: auto;
@@ -372,6 +378,12 @@
   .flex-grow {
     flex-grow: 1;
   }
+  .table-auto {
+    table-layout: auto;
+  }
+  .border-collapse {
+    border-collapse: collapse;
+  }
   .transform {
     transform: var(--tw-rotate-x) var(--tw-rotate-y) var(--tw-rotate-z) var(--tw-skew-x) var(--tw-skew-y);
   }
@@ -432,6 +444,10 @@
     border-style: var(--tw-border-style);
     border-width: 1px;
   }
+  .border-t {
+    border-top-style: var(--tw-border-style);
+    border-top-width: 1px;
+  }
   .border-b {
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
@@ -455,6 +471,9 @@
   .p-4 {
     padding: calc(var(--spacing) * 4);
   }
+  .px-2 {
+    padding-inline: calc(var(--spacing) * 2);
+  }
   .px-4 {
     padding-inline: calc(var(--spacing) * 4);
   }
@@ -463,6 +482,9 @@
   }
   .py-10 {
     padding-block: calc(var(--spacing) * 10);
+  }
+  .text-center {
+    text-align: center;
   }
   .text-2xl {
     font-size: var(--text-2xl);
@@ -542,25 +564,25 @@
 }
 @layer base {
   h1, .h1 {
-    margin: calc(var(--spacing) * 4);
+    margin-inline: calc(var(--spacing) * 2);
+    margin-block: calc(var(--spacing) * 8);
     font-size: var(--text-3xl);
     line-height: var(--tw-leading, var(--text-3xl--line-height));
-    margin: calc(var(--spacing) * 2);
   }
   hr, .hr {
     margin: calc(var(--spacing) * 2);
   }
   h2, .h2 {
-    margin: calc(var(--spacing) * 4);
+    margin-inline: calc(var(--spacing) * 2);
+    margin-block: calc(var(--spacing) * 4);
     font-size: var(--text-2xl);
     line-height: var(--tw-leading, var(--text-2xl--line-height));
-    margin: calc(var(--spacing) * 2);
   }
   h3, .h3 {
-    margin: calc(var(--spacing) * 4);
+    margin-inline: calc(var(--spacing) * 2);
+    margin-block: calc(var(--spacing) * 4);
     font-size: var(--text-xl);
     line-height: var(--tw-leading, var(--text-xl--line-height));
-    margin: calc(var(--spacing) * 2);
   }
   p, .paragraph {
     margin: calc(var(--spacing) * 2);
@@ -572,6 +594,9 @@
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
   main ul {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+  blockquote, .blockquote {
     margin-bottom: calc(var(--spacing) * 4);
   }
 }
