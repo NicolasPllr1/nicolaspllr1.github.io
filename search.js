@@ -3,10 +3,8 @@
 // like: the home and reading list pages, and iterate over all posts content
 const searchableContent = [
   { title: "Home Page", content: "Welcome to my personal website.", url: "/" },
-  { title: "Blog Post 1", content: "This is my first blog post about web development.", url: "/blog/post1.html" },
-  { title: "Blog Post 2", content: "Thoughts on design systems and user interfaces.", url: "/blog/post2.html" },
-  { title: "Good Stuff - Books", content: "A collection of my favorite books and recommendations.", url: "/good_stuff.html#books" },
-  // Add more content as your site grows
+  { title: "Easy Intro to Networks and the Internet", content: "http, tcp, udp, networks, internet, protocols, layers, interfaces, physical, link, transport, network, application, smtp, dns", url: "posts/networks-intro/post.html" },
+  { title: "mini http/1.1 server (in rust)", content: "http, tcp, server, rust, programming, codecrafters, projects", url: "posts/http-server-rust/post.html" },
 ];
 
 const searchModal = document.getElementById('search-modal');
