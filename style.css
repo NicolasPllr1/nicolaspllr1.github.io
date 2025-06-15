@@ -34,3 +34,18 @@
     @apply mb-4;
   }
 }
+
+pre {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+code[data-line-numbers] {
+  counter-reset: line;
+}
+
+code[data-line-numbers] > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+  /* style line numbers */
+}

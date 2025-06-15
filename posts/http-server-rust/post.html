@@ -1,64 +1,658 @@
 <!doctype html>
 <html class="tokyo-night">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="/output.css" rel="stylesheet" />
-  </head>
+    <head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link href="/output.css" rel="stylesheet" />
+    </head>
 
-  <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
+    <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
 
-    <header class="py-10">
-      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
-        <ul class="flex space-x-4 items-center">
-          <li><a href="/" > home </a></li>
-          <li><a href="/blog.html"> writes </a></li>
-          <li><a href="/reading_list.html" class=""> reads </a></li>
-        </ul>
-        <p class="info"> cmd+k </p>
-      </nav>
-    </header>
+	<header class="py-10">
+	    <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
+		<ul class="flex space-x-4 items-center">
+		    <li><a href="/" > home </a></li>
+		    <li><a href="/blog.html"> writes </a></li>
+		    <li><a href="/reading_list.html" class=""> reads </a></li>
+		</ul>
+		<p class="info"> cmd+k </p>
+	    </nav>
+	</header>
 
-    <main class="flex-grow justify-between">
-      <h1 class="mb-4">Mini HTTP/1.1 Server (in Rust)</h1>
-      <div class="flex justify-between">
-      <h3>May 2025</h3>
-      <p class="warning px-4">Coming soon ...</p>
-      </div>
-    </main>
+	<main class="flex-grow justify-between">
+	    <h1 class="mb-4">HTTP Server in Rust</h1>
+	    <div class="flex justify-between">
+		<h3>May 2025</h3>
+		<p class="warning px-4">~5k words</p>
+	    </div>
+	    <hr>
 
-    <footer class="py-10 text-xl">
-      <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
-        <ul class="flex space-x-4">
-          <li><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
-          <li><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
-        </ul>
-      </nav>
+	    <h2>Why Write an HTTP-Server</h2>
+	    <p>I wrote an almost spec-compliant HTTP/1.1 server in Rust to demystify networks.<br>
+		In this post I go over the architecture and explain the main parts as well as interesting stuff I learned along the way.
+		Code: nicolaspllr1/mini-http-server on github.</p>
+	    <p>A small passage from <a href="https://x.com/jorandirkgreef">Joran</a>'s stellar <a href="https://youtu.be/sC1B3d9C_sI?si=1Acye-_nJ1u-W2l9&#x26;t=202">presentation of TigerBeetle</a> stuck with me. There are  4 colours of programming :
+		- <em>Network</em>
+		- Compute
+		- Memory
+		- Storage</p>
+	    <p><img src="./assets/tigerbeetle_four_primary_colours.png" width="400"></p>
+	    <p>Programming is about composing systems from these fundamental domains. Among the four, <em>networks</em> were particularly mysterious to me. Take the Internet, how can this possibly work ?</p>
+	    <p>So I <a href="https://nicolaspllr1.github.io/posts/networks-intro/post.html">studied the theory</a> on one hand, and on the other, I got busy with 2 practical projects to build solid foundations:</p>
+	    <ul>
+		<li>an HTTP/1.1 server (<strong>topic of this blog post</strong>)</li>
+		<li>a (forwarding) DNS server</li>
+	    </ul>
+	    <p>Implementing things really dispel all the magic that can seem daunting before doing the practical work.</p>
+	    <p>Both projects were made in Rust for more fun and learning. This post will focus on the HTTP server implementation.</p>
+	    <p>You can check out/fork the repo: <a href="https://github.com/NicolasPllr1/mini-http-server">mini-http-server</a>. Run the server yourself and host your own websites ! ;)</p>
+	    <p>note: DNS server impl. is <a href="https://github.com/NicolasPllr1/mini-dns-server">here</a>, but it's less polished. We will solely focus on the HTTP server in this post.</p>
+	    <h2>Getting Started and Goals</h2>
+	    <h3>Codecrafters</h3>
+	    <p>Kicked off my implementation embarking on  <a href="https://app.codecrafters.io/courses/http-server/introduction?repo=new">codecrafters http-server</a> project.</p>
+	    <p>On every push to the distant repo, you benefit from their tests suite. This is awesome and helps a lot.
+		On the contrary, at the end of the project, I added features not yet covered by their harness which made it way more painful to assure correctness.</p>
+	    <p>Finishing the codecrafters project, you will have implemented the very basics:</p>
+	    <ul>
+		<li>get/post request parsing on a couple of paths</li>
+		<li>leveraging headers</li>
+		<li>supporting gzip compression</li>
+		<li>response formatting, status codes
+		    This gets you from 0 to some level of understanding. Even if these features seem basic, concrete practice elevates theoretical understanding to another level.</li>
+	    </ul>
+	    <p>That's why theory and practice should be worked on concurrently (what's the best concurrency model for skill acquisition ? Is it the same in most fields? good questions!).</p>
+	    <h3>Personal Goal</h3>
+	    <p>In my case, I wanted my server to serve <a href="https://nicolaspllr1.github.io/">my own blog</a> to my browser. However the implementation I had at the end of the codecrafters project was not enough, from a purely practical standpoint.</p>
+	    <p>Small but important bits were missing - like properly identifying <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type">content types</a>.
+		I was lucky they added an extension to implement <a href="https://hpbn.co/http1x/#benefits-of-keepalive-connections">keep-alive</a>, which I wanted to add to get closer to full HTTP/1.1 compliance.</p>
+	    <blockquote>
+		<p>It’s a good example of how small protocol details (like Content-Type: text/html) are critical in practice, even if they’re easy to overlook and/or simple to implement.</p>
+	    </blockquote>
+	    <h2>Server Architecture - Looping Over Incoming Requests</h2>
+	    <h3>Core Architecture</h3>
+	    <p>At its core, the HTTP server runs an event loop: it listens for incoming TCP connections, processes the HTTP request, generates a response, and sends it back.</p>
+	    <p>We’re in the classic client/server situation:
+		<img src="./assets/http_client_server_situation_sequence_diragram.svg" width="400"></p>
+	    <p>So the heart of the HTTP server is this <strong>loop over incoming requests</strong>:</p>
 
-    </footer>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// listening for TCP requests coming in at our address</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> TcpListener</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">bind</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">address</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#BB9AF7">for</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF"> in</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">incoming</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	// handle incoming stream</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Each <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">stream</span></span></code></span> represents a connection from a client. We handle them in 3 steps:</p>
+
+	    <ol>
+		<li><strong>Parsing the incoming http-request.</strong>
+		    The request is received as a "byte stream" through the TCP connection. The bytes are parsed assuming the HTTP protocol is followed.</li>
+		<li><strong>Constructing an http-response.</strong>
+		    The request is processed to build the appropriate response.</li>
+		<li><strong>Send the response.</strong>
+		    The response is sent back to the client through the TCP connection.</li>
+	    </ol>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">fn</span><span style="color:#7AA2F7"> handle_stream</span><span style="color:#89DDFF">(</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> TcpStream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> Result</span><span style="color:#89DDFF">&#x3C;(),</span><span style="color:#C0CAF5"> HandlingError</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#A9B1D6">	</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">    // parse request</span></span>
+		<span data-line=""><span style="color:#BB9AF7">    let</span><span style="color:#C0CAF5"> http_request</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_stream</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#A9B1D6">	</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">    // construct response</span></span>
+		<span data-line=""><span style="color:#BB9AF7">    let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#A9B1D6">	</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">    // send back response</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#A9B1D6">	</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Ok</span><span style="color:#89DDFF">(())</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <h3>Adding keepalive</h3>
+	    <p>Keep-alive was surprisingly easy to add to my server, a simple while loop over a  boolean <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">keep_alive</span></span></code></span>, defaulting to true, and set to false based on the incoming request keep-alive header.
+		Although simple, this feature of HTTP/1.1 is very important for the performance of the protocol and one of the big changes going from 1.0 to 1.1. This is because HTTP often runs on top of TCP, and establishing TCP connections is not fast compared to a single round-trip between client and server.</p>
+	    <p>See the chapter on <a href="https://hpbn.co/http1x/#benefits-of-keepalive-connections">keep-alive</a> of the awesome <a href="https://hpbn.co/">High Performance Browser Networking</a> by <a href="https://ilya.grigorik.com/">Ilya Grigorik</a>.</p>
+	    <p>Before keepalive :</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">fn</span><span style="color:#7AA2F7"> handle_stream</span><span style="color:#89DDFF">(</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> TcpStream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> Result</span><span style="color:#89DDFF">&#x3C;(),</span><span style="color:#C0CAF5"> Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> Error</span><span style="color:#89DDFF">>></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	match</span><span style="color:#C0CAF5"> HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_stream</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		Ok</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">			let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">			http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">		}</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		Err</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">			eprintln!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">error parsing the http-request: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">e</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#BB9AF7">			let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_bad_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">			http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">		}</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>With keepalive:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">fn</span><span style="color:#7AA2F7"> handle_stream</span><span style="color:#89DDFF">(</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> TcpStream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> Result</span><span style="color:#89DDFF">&#x3C;(),</span><span style="color:#C0CAF5"> Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> Error</span><span style="color:#89DDFF">>></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	while</span><span style="color:#C0CAF5"> keep_alive</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">		match</span><span style="color:#C0CAF5"> HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_stream</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">			Ok</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">				keep_alive</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> http_request</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">keep_alive</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#BB9AF7">				let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">				http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">			}</span></span>
+		<span data-line=""><span style="color:#C0CAF5">			Err</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">				eprintln!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">error parsing the http-request: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">e</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">				keep_alive</span><span style="color:#89DDFF"> =</span><span style="color:#FF9E64"> false</span><span style="color:#89DDFF">;</span><span style="color:#51597D;font-style:italic"> // terminate connection</span></span>
+		<span data-line=""><span style="color:#BB9AF7">				let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_bad_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">				http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">			}</span></span>
+		<span data-line=""><span style="color:#89DDFF">		}</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Where the keep_alive field in <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span></span></code></span> is set parsing the request headers. The default HTTP/1.1 behavior is keeping the TCP connection alive. Only if a <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection#syntax"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Connection</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> close</span></span></code></span> header</a> is found will the server close the connection right after responding.</p>
+	    <p>Small utility implemented on <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span></span></code></span> to determine if the server should close the TCP connection:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> keep_alive</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> bool</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">        match</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">headers</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">get</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">connection</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            Some</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">s</span><span style="color:#89DDFF">)</span><span style="color:#BB9AF7"> if</span><span style="color:#C0CAF5"> s</span><span style="color:#BB9AF7"> ==</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">close</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF"> =></span><span style="color:#FF9E64"> false</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            Some</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">_</span><span style="color:#89DDFF">)</span><span style="color:#BB9AF7"> |</span><span style="color:#C0CAF5"> None</span><span style="color:#89DDFF"> =></span><span style="color:#FF9E64"> true</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#89DDFF">        }</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span></code></pre></figure>
+	    <p>Next, let's look at the abstraction that allows us to "receive" and "send" data to-and-from the client to the server: <strong>sockets</strong>.</p>
+	    <h2>"Sockets"</h2>
+	    <h3>Berkeley Sockets</h3>
+	    <p>Let's explain what is a "socket". Before working on this project, I had often heard expression like "socket programming" or just the term "socket" but never understood what this was all about.</p>
+	    <p>A <a href="https://en.wikipedia.org/wiki/Network_socket#">network socket</a> is an <em>abstract reference to a communication endpoint</em>. It acts as a <a href="https://en.wikipedia.org/wiki/Handle_(computing)">"handle"</a> on the endpoint <strong>providing an API for the communication</strong> path from one end's perspective.</p>
+	    <p>This means a socket can be used to perform operation on the communication endpoint - think sending/receiving data. In the Unix spirit (<a href="https://en.wikipedia.org/wiki/Everything_is_a_file">"everything is a file"</a>),  a socket abstracts the communication endpoint as a file descriptor although the analogy has its limits (which?). The parallels between doing file I/O and networking I/O include comparing read/write with receive/send. .</p>
+	    <p><img src="./assets/socket_file_descriptor_analogy.svg" alt="flowchart illustrating the parallel between network I/O and file I/O" width="500">
+		note: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">sd</span></span></code></span> for socket descriptor, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">fd</span></span></code></span> for file descriptor</p>
+	    <p>A socket to do networking on the internet is defined by <a href="https://en.wikipedia.org/wiki/Network_socket#Implementation">three pieces of information</a>:</p>
+	    <ul>
+		<li>a local socket address: IP address + port</li>
+		<li>a remote socket address: IP address + port</li>
+		<li>a transport protocol: say TCP or UDP</li>
+	    </ul>
+	    <p>See this example of a full network socket definition:
+		<img src="./assets/socket_triplet.svg" alt="triplet defining networking socket" width="500"></p>
+	    <ul>
+		<li>Local socket address: here a <em>private</em> IP address from the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#FF9E64">192</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">168</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">/</span><span style="color:#FF9E64">16</span></span></code></span> range (defined in <a href="https://www.rfc-editor.org/rfc/rfc1918">RFC 1918 :  "Address Allocation for Private Internets"</a>) with the standard port for HTTP (80)</li>
+		<li>Remote socket address: here an IP address is from the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#FF9E64">203</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">113</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">/</span><span style="color:#FF9E64">24</span></span></code></span> block. This block is specifically reserved for <em>documentation and examples</em> (as per <a href="https://www.rfc-editor.org/rfc/rfc5737">RFC 5737 : "IPv4 Address Blocks Reserved for Documentation"</a>) + the standard port for HTTPS (443)</li>
+	    </ul>
+	    <p>Rust abstracts these network sockets with its <a href="https://doc.rust-lang.org/std/net/enum.SocketAddr.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">SocketAddr</span></span></code></span></a> struct.</p>
+	    <h3>Sockets in Rust -  <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></h3>
+	    <p>Rust gives you high-level access to sockets with its standard library:</p>
+	    <ul>
+		<li><a href="https://dev-doc.rust-lang.org/stable/std/net/struct.TcpListener.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpListener</span></span></code></span></a> represents a listening socket</li>
+		<li><a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></a> , represents a connected socket ready to send/receive data</li>
+	    </ul>
+	    <p>Rust structs and their traits/methods maps to the historical <a href="https://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley sockets</a> API:
+		<img src="./assets/berkeley_sockets_primitives.png" width="400"></p>
+	    <p>A <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span> can be obtained from a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpListener</span></span></code></span> after  <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">bind</span></span></code></span>ing the listener to a particular socket-address: ip address + port number, remember the triplet.
+		Then, you call <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">incoming</span></span></code></span> on the binded listener. This gives us an iterator over incoming TCP requests to our local ip address + port.</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> TcpListener</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">bind</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">local_socket_addr</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">for</span><span style="color:#C0CAF5"> tcp_stream</span><span style="color:#89DDFF"> in</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">incoming</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	// each stream is a new client connection</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <h2>Parsing Incoming Requests</h2>
+	    <h3>Reading from <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></h3>
+	    <p><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span> implements the <a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html#impl-Read-for-TcpStream"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span></a> and <a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html#impl-Write-for-TcpStream"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Write</span></span></code></span></a> traits. This means we can read/write bytes directly from/to an instance of a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span> using the methods provided by these trait.</p>
+	    <p>However, these methods are the basics of I/O operations. Critically, they are <em>not</em> buffered: see [<span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>](### <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>)</p>
+	    <h3>Difficulty: No EOF marker in headers</h3>
+	    <p>The first problem I ran into trying to read and parse HTTP request is that they do <em>not</em> have EOF (end of file) markers ! My first naive approach, i.e. <a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read_to_end"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_until_end</span></span></code></span></a> did not work. Never ended !</p>
+	    <p>I had to read line by line, FSM-style. No need for a real FSM as the reading steps are always the same, the chain of reads is fixed: request-line, then http method, then optional headers and finally optional body.</p>
+	    <p>This strategy turns into a sequence of <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_line</span></span></code></span> and <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_exact</span></span></code></span> leveraging a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>er.</p>
+	    <p>However, these many sequential small reads would be very inefficent if done through the basic <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> trait. We would fire one system call per read!
+		So this strategy turns into a sequence of <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_line</span></span></code></span> and <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_exact</span></span></code></span> - same methods - but leveraging a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>er. More on that in the  [<span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>](### <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>) section.</p>
+	    <p>Initialising the buffered reader:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> reader</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> BufReader</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">stream</span><span style="color:#89DDFF">);</span></span></code></pre></figure>
+	    <p>Example parsing the request line:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// Read the *request-line*</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> request_line</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#C0CAF5">reader</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">read_line</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> request_line</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">// Parse the *request-line*</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#89DDFF"> [</span><span style="color:#C0CAF5">http_method</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> request_target</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> protocol_version</span><span style="color:#89DDFF">]:</span><span style="color:#89DDFF"> [&#x26;</span><span style="color:#C0CAF5">str</span><span style="color:#89DDFF">;</span><span style="color:#FF9E64"> 3</span><span style="color:#89DDFF">]</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> request_line</span></span>
+		<span data-line=""><span style="color:#89DDFF">	.</span><span style="color:#7AA2F7">split_whitespace</span><span style="color:#89DDFF">()</span></span>
+		<span data-line=""><span style="color:#89DDFF">	.</span><span style="color:#7AA2F7">collect</span><span style="color:#89DDFF">::&#x3C;</span><span style="color:#C0CAF5">Vec</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">_</span><span style="color:#89DDFF">>>()</span></span>
+		<span data-line=""><span style="color:#89DDFF">	.</span><span style="color:#7AA2F7">try_into</span><span style="color:#89DDFF">()</span></span>
+		<span data-line=""><span style="color:#89DDFF">	.</span><span style="color:#7AA2F7">map_err</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">|</span><span style="color:#C0CAF5">_</span><span style="color:#BB9AF7">|</span><span style="color:#0DB9D7"> RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">RequestLine</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">request_line</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">to_string</span><span style="color:#89DDFF">()))?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#C0CAF5"> http_method</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> http_method</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">parse</span><span style="color:#89DDFF">::&#x3C;</span><span style="color:#C0CAF5">HttpMethod</span><span style="color:#89DDFF">>()?;</span><span style="color:#51597D;font-style:italic"> // turbofish + shadowing + ?</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#C0CAF5"> protocol_version</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> protocol_version</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">parse</span><span style="color:#89DDFF">::&#x3C;</span><span style="color:#C0CAF5">HttpVersion</span><span style="color:#89DDFF">>()?;</span></span></code></pre></figure>
+	    <h3><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span></h3>
+	    <h4>I/O in Rust - Read bs BufRead</h4>
+	    <p>I/O operations in Rust have felt very different than I what experienced in other <em>higher-level</em> language like Python. Rust does not hide the <em>many</em> different ways in which you can carry read/write operations.</p>
+	    <hr>
+	    <p>For example, I got to wrap my head around the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> and <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> traits. This distinction exposes very interesting trade-offs which I was completely unaware of using higher-level languages in the past.</p>
+	    <p>When you read from a source - in our case incoming bytes from the network - you can choose to:</p>
+	    <ul>
+		<li>"greedily" read new bytes whenever they become available - potentially one-by-one. This corresponds to the fundamental <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> trait, the most basic trait for reading bytes from a source.</li>
+		<li>wait a bit to read a larger chunk of data all at once and store it in memory, i.e. in a data buffer - that's <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span>.</li>
+	    </ul>
+	    <p>The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> distinction matters because every reads using the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> trait translate to a system call to the operaint system. However <a href="https://en.wikipedia.org/wiki/System_call">systems calls</a> <strong><a href="https://youtu.be/H4SDPLiUnv4?si=nADWiYifdC7Efuwt">are not cheap</a></strong>.
+		That's why the intermediate  <a href="https://en.wikipedia.org/wiki/Data_buffer">buffer</a> leveraged by the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> trait is so powerful. Once the buffer has been filled, subsequent read calls will read from it instead of reading from the source. This indirection allows to make rapid, small read calls from memory (fast) by by-passing the need to make lots of system calls (slow).</p>
+	    <p>Depending on the access pattern, one trait may be far better than the other performance-wise:</p>
+	    <ul>
+		<li>if you plan to read once or read exactly n bytes: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> is perfect</li>
+		<li>if you plan to read multiple times from the same source, typically one line at a time, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> is perfect. The buffer overhead is well-worth it as you pay for fewer "true" reads - built upon system calls. Instead you read from memory which is faster.</li>
+	    </ul>
+	    <p>The Rust doc for <a href="https://doc.rust-lang.org/std/io/struct.BufReader.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> struct</a> summarizes this clearly:</p>
+	    <blockquote>
+		<p>The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> struct adds buffering to any reader.</p>
+		<p>It can be excessively inefficient to work directly with a <a href="https://doc.rust-lang.org/std/io/trait.Read.html" title="trait std::io::Read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span></a> instance. For example, every call to <a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read" title="method std::net::TcpStream::read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read</span></span></code></span></a> on <a href="https://doc.ru%E2%88%8Fst-lang.org/std/net/struct.TcpStream.html" title="struct std::net::TcpStream"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></a> results in a system call. A <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> performs large, infrequent reads on the underlying <a href="https://doc.rust-lang.org/std/io/trait.Read.html" title="trait std::io::Read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span></a> and maintains an in-memory buffer of the results.</p>
+		<p><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> can improve the speed of programs that make <em>small</em> and <em>repeated</em> read calls to the same file or network socket. It does not help when reading very large amounts at once, or reading just one or a few times. It also provides no advantage when reading from a source that is already in memory, like a <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html"> <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Vec</span><span style="color:#C0CAF5"></a>.</p>
+	    </blockquote>
+	    <h4>Toy Benchmark</h4>
+	    <p>I spun up a quick benchmark - I admit courtesy of my favourite LLM - to measure the difference between looping over plain  reads and looping over buffered reads over a big text file.</p>
+	    <p>Benchmarks with <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">hyperfine</span></span></code></span>. On Debug and Release builds, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> method was respectively <strong>4.95x and 23.6x faster</strong> than <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> method:</p>
+	    <p><img src="./assets/read_normal_vs_buf_bench_debug_and_release.png" alt="normal vs buffured read benchamrk, debug and realase, using hyperfine" width="500" </img></p>
+	    <h4>Practical Examples from my HTTP Server</h4>
+	    <p>Example reading the body. In this case, the reader is already a buffered reader as we first read line by line the incoming payload. But when it comes to the body, we know its length in bytes. So we only have to read once: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_exact</span></span></code></span> is perfect as we know how much bytes we want.</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// Read the *body* if any</span></span>
+		<span data-line=""><span style="color:#BB9AF7">if</span><span style="color:#BB9AF7"> let</span><span style="color:#C0CAF5"> Some</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">n_bytes_str</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> headers</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">get</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">content-length</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#C0CAF5"> n_bytes</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> n_bytes_str</span></span>
+		<span data-line=""><span style="color:#89DDFF">		.</span><span style="color:#7AA2F7">parse</span><span style="color:#89DDFF">::&#x3C;</span><span style="color:#C0CAF5">usize</span><span style="color:#89DDFF">>()</span></span>
+		<span data-line=""><span style="color:#89DDFF">		.</span><span style="color:#7AA2F7">map_err</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">RequestError</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">BodyContentLength</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> body_buf</span><span style="color:#89DDFF"> =</span><span style="color:#7AA2F7"> vec!</span><span style="color:#89DDFF">[</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">;</span><span style="color:#C0CAF5"> n_bytes</span><span style="color:#89DDFF">];</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	reader</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">read_exact</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> body_buf</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#C0CAF5"> body</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">from_utf8</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">body_buf</span><span style="color:#89DDFF">).</span><span style="color:#7AA2F7">map_err</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">RequestError</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">BodyUtf8</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#C0CAF5">	builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_body</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">body</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#89DDFF">};</span></span></code></pre></figure>
+	    <p>But when parsing headers, I use one <em>read</em> call for every single header. A buffered read is way more efficient in this case:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// Read eventual *headers*</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> headers</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> HashMap</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HashMap</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> header_line</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#BB9AF7">loop</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	reader</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">read_line</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> header_line</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	if</span><span style="color:#C0CAF5"> header_line</span><span style="color:#BB9AF7"> ==</span><span style="color:#89DDFF"> "</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">r</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">n"</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">		break</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">	}</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#89DDFF"> (</span><span style="color:#C0CAF5">header_name</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> header_value</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> header_line</span></span>
+		<span data-line=""><span style="color:#89DDFF">		.</span><span style="color:#7AA2F7">split_once</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">'</span><span style="color:#9ECE6A">:</span><span style="color:#89DDFF">'</span><span style="color:#89DDFF">)</span></span>
+		<span data-line=""><span style="color:#89DDFF">		.</span><span style="color:#7AA2F7">ok_or</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Header</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">header_line</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">to_string</span><span style="color:#89DDFF">()))?;</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	headers</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">insert</span><span style="color:#89DDFF">(</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		header_name</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">to_lowercase</span><span style="color:#89DDFF">().</span><span style="color:#7AA2F7">to_string</span><span style="color:#89DDFF">(),</span><span style="color:#51597D;font-style:italic"> // header names are case-insensitive</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		header_value</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">trim</span><span style="color:#89DDFF">().</span><span style="color:#7AA2F7">to_string</span><span style="color:#89DDFF">(),</span></span>
+		<span data-line=""><span style="color:#89DDFF">	);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	header_line</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">clear</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#C0CAF5">builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_headers</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">headers</span><span style="color:#89DDFF">);</span></span></code></pre></figure>
+	    <h2>Constructing Responses</h2>
+	    <h3>Builder Pattern</h3>
+	    <p>Classic of programming but had never implemented one as the need never arose. Here, I was creating lots of <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpResponse</span></span></code></span>s with minor differences in one big match statement. Using the builder-pattern significantly reduces the loc and increased readibilty in this part of the code. I also used it to build the [[#Parsing Incoming Requests|HttpRequest]] as you saw previously.</p>
+	    <p>Typical <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Builder</span></span></code></span> trait. I need a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new</span></span></code></span> method to get one, and a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">build</span></span></code></span> to build what the builder is supposed to build - the generic type <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">T</span></span></code></span>:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#BB9AF7"> trait</span><span style="color:#C0CAF5"> Builder</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> new</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> -></span><span style="color:#F7768E"> Self</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> build</span><span style="color:#89DDFF">(</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> T</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Then it's very ergonomic to build a new <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">T</span></span></code></span>. See this example where a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Builder</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">HttpResponse</span><span style="color:#89DDFF">></span></span></code></span> is used:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> new_from_bad_request</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">error</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#C0CAF5">RequestError</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">    let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> builder</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">builder</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#C0CAF5">    builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_status_code</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">StatusCode</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">BadRequest</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">    let</span><span style="color:#C0CAF5"> body_str</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> error</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">to_string</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#BB9AF7">    let</span><span style="color:#C0CAF5"> body</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> body_str</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">as_bytes</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_body</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">body</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_content_length</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">body</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">len</span><span style="color:#89DDFF">());</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#C0CAF5">    builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">build</span><span style="color:#89DDFF">()</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>This comes at the cost of a little bit of boiler-plate to implement the pattern itself:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> HttpResponseBuilder</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> with_protocol_version</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> protocol_version</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> HttpVersion</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">http_response</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">protocol_version </span><span style="color:#89DDFF">=</span><span style="color:#C0CAF5"> protocol_version</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">    pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> with_status_code</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> status_code</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> StatusCode</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">http_response</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">status_code </span><span style="color:#89DDFF">=</span><span style="color:#C0CAF5"> status_code</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">    pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> with_content_type</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> content_type</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> ContentType</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">http_response</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">content_type </span><span style="color:#89DDFF">=</span><span style="color:#C0CAF5"> content_type</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">    pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> with_content_length</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> content_length</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> usize</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">http_response</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">content_length </span><span style="color:#89DDFF">=</span><span style="color:#C0CAF5"> content_length</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">    /* ... */</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>This boilerplate can be mitigated using macros or using cratesproviding such <a href="https://doc.rust-lang.org/stable/book/ch20-05-macros.html">macros</a> or nice derive attributes (<a href="https://docs.rs/derive_builder/latest/derive_builder/">derive_builder</a>) .</p>
+	    <h4>Build vs New Semantics</h4>
+	    <p><a href="https://doc.rust-lang.org/stable/book/ch12-03-improving-error-handling-and-modularity.html#returning-a-result-instead-of-calling-panic">In the book</a>, it is explained that <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new</span></span></code></span> functions are expected to never fail while a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">build</span></span></code></span> functions may.</p>
+	    <p>So I refactored my <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_stream</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)</span></span></code></span> to <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new_from_stream</span></span></code></span> as I though it should never err, at worse it should create a new http repsonse with a 500 (internal error) code.
+		The HttpRequest however can fail and I therefore match on its <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">build_from_stream</span></span></code></span> method :</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">match</span><span style="color:#C0CAF5"> HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">build_from_stream</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Ok</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	keep_alive</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> http_request</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">keep_alive</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">http_request</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> data_dir</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Err</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	keep_alive</span><span style="color:#89DDFF"> =</span><span style="color:#FF9E64"> false</span><span style="color:#89DDFF">;</span><span style="color:#51597D;font-style:italic"> // terminate connection</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#C0CAF5"> http_response</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new_from_bad_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	http_response</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">write_to</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>--> I wrote 2 function that both create a new http-response without failing:</p>
+	    <ul>
+		<li><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new_from_request</span></span></code></span></li>
+		<li><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new_from_bad_request</span></span></code></span></li>
+	    </ul>
+	    <p>And if  <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new_from_request</span></span></code></span> was to "fail" internally, for instance somewhere in the internals of some endpoint, then a fallback to an http-response similar to what <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new_from_bad_request</span></span></code></span> outputs is actually returned.</p>
+	    <ul>
+		<li>I also used the builder pattern for the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span></span></code></span> struct as well as my <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Config</span></span></code></span> struct I build from the combination of CLI args, a toml config file and potential env. variables.</li>
+	    </ul>
+	    <h3>Error handling - levels of maturity</h3>
+	    <ul>
+		<li><a href="https://burntsushi.net/rust-error-handling/">Error Handling in Rust</a> from Andrew Gallent, absolute gem. Guided me to enhance the error handling going up the levels of maturity.</li>
+		<li>I also liked watching  <a href="https://www.youtube.com/watch?v=s5S2Ed5T-dc&#x26;t=1004s">Logan Smith's video - A Simpler Way to See Results</a> and  <a href="https://www.youtube.com/@rustnationuk">Tim McNamara - 4 levels of error handling</a> on Rust Nation UK.</li>
+	    </ul>
+	    <ol start="0">
+		<li>
+		    <p>absolute basics just because Rust <em>forces</em> you to do something about errors : <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">unwrap</span></span></code></span>s, or better <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">expect</span></span></code></span>s
+			Here the difference between a personal project, a simple binary, vs a professional / used-by-others librairy is big. The former can reasonably stops here, while the later must go way further up the error-hanling maturity scale.</p>
+		</li>
+		<li>
+		    <p>Start using <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> E</span><span style="color:#89DDFF">></span></span></code></span>, starting with the opaque <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">></span></span></code></span></p>
+		</li>
+		<li>
+		    <p>Moving to the general <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> Error</span><span style="color:#89DDFF">>></span></span></code></span></p>
+		</li>
+		<li>
+		    <p>And finally, defining and composing custom error type, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> MyCustomError</span><span style="color:#89DDFF">></span></span></code></span>, typically enums (why not struct? structs vs enums for error types)</p>
+		</li>
+	    </ol>
+	    <p>Example: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">build_from_stream</span></span></code></span> can fail to parse the request --> returns a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">HttpRequest</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF">></span></span></code></span>.</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#BB9AF7"> enum</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    Io</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">io</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Error</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    RequestLine</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    Method</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    ProtocolVersion</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    Header</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    BodyUtf8</span><span style="color:#89DDFF">(</span><span style="color:#0DB9D7">std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">string</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">FromUtf8Error</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#7AA2F7">    BodyContentLength</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">ParseIntError</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>With some amount of boilerplate to make it usable:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> From</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">std</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">io</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Error</span><span style="color:#89DDFF">></span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> from</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">io</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Error</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">        RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Io</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> From</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">HttpMethodParseError</span><span style="color:#89DDFF">></span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> from</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> HttpMethodParseError</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">        RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Method</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">found</span><span style="color:#89DDFF">)</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> From</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">HttpVersionParseError</span><span style="color:#89DDFF">></span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> from</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> HttpVersionParseError</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">        RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">ProtocolVersion</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">found</span><span style="color:#89DDFF">)</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#0DB9D7"> fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Display</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> fmt</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> f</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#0DB9D7"> fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Formatter</span><span style="color:#89DDFF">&#x3C;'</span><span style="color:#C0CAF5">_</span><span style="color:#89DDFF">>)</span><span style="color:#89DDFF"> -></span><span style="color:#0DB9D7"> fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">        match</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">RequestLine</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">s</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">malformed request line. Expected: &#x3C;method> &#x3C;request-target> &#x3C;protocol-version>. Got:  </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">s</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Method</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">m</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">unsupported HTTP method: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">m</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">ProtocolVersion</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">v</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">unsupported HTTP protocol version: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">v</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Header</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">h</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">invalid header: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">h</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">BodyUtf8</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">b</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">body is not valid UTF-8: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">b</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">BodyContentLength</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">l</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">                write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">error parsing the body length: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">l</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">)</span></span>
+		<span data-line=""><span style="color:#89DDFF">            }</span></span>
+		<span data-line=""><span style="color:#C0CAF5">            RequestError</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">Io</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">I/O while reading request: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">e</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#89DDFF">        }</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">error</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Error</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> RequestError</span><span style="color:#89DDFF"> {}</span></span>
+		<span data-line=""> </span></code></pre></figure>
+	    <p>Crates like thiserror or Anyhow are said to help a lot with this: writing good error types and working with them. For instance, thiserror writes much of this boilerplate code through simple macros.</p>
+	    <h2>Sending the Response Back</h2>
+	    <h3>Display vs Write Traits</h3>
+	    <ul>
+		<li><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Write</span></span></code></span> (dealing with bytes) vs <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Display</span></span></code></span> (dealing with str)</li>
+	    </ul>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> write_to</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">W</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> Write</span><span style="color:#89DDFF">>(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> writer</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> W</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">io</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;()></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">	todo!</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> Display</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> fmt</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> f</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Formatter</span><span style="color:#89DDFF">&#x3C;'</span><span style="color:#C0CAF5">_</span><span style="color:#89DDFF">>)</span><span style="color:#89DDFF"> -></span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">		todo!</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#89DDFF">	}</span></span></code></pre></figure>
+	    <p>At first I was very confused and tried to use the display trait to "write" my http-response struct the right way and send this string as bytes as the answer.</p>
+	    <p>It looks something like this:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> Display</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> fmt</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> f</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Formatter</span><span style="color:#89DDFF">&#x3C;'</span><span style="color:#C0CAF5">_</span><span style="color:#89DDFF">>)</span><span style="color:#89DDFF"> -></span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">fmt</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">        // Status line</span></span>
+		<span data-line=""><span style="color:#7AA2F7">        write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "{}</span><span style="color:#89DDFF"> {}</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">r</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">n"</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">protocol_version</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">status_code</span><span style="color:#89DDFF">,)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">        // Content-type</span></span>
+		<span data-line=""><span style="color:#7AA2F7">        write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">Content-Type: </span><span style="color:#89DDFF">{}</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">r</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">n"</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">content_type</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">		// ...</span></span>
+		<span data-line=""> </span></code></pre></figure>
+	    <p>However, the intermediary string is not needed as one can directly work with a writer implementing the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Write</span></span></code></span> trait, which was I was actually exactly what I was looking for.</p>
+	    <p>Example implementing <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">write_to</span></span></code></span> taking in a writer for my <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpResponse</span></span></code></span>:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    pub</span><span style="color:#89DDFF"> fn</span><span style="color:#7AA2F7"> write_to</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">W</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> Write</span><span style="color:#89DDFF">>(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> writer</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> W</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#0DB9D7"> std</span><span style="color:#89DDFF">::</span><span style="color:#0DB9D7">io</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Result</span><span style="color:#89DDFF">&#x3C;()></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">        // Status line</span></span>
+		<span data-line=""><span style="color:#7AA2F7">        write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">writer</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "{}</span><span style="color:#89DDFF"> {}</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">r</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">n"</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">protocol_version</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">status_code</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">        // Content-type</span></span>
+		<span data-line=""><span style="color:#7AA2F7">        write!</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">writer</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">content-type: </span><span style="color:#89DDFF">{}</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">r</span><span style="color:#C0CAF5">\</span><span style="color:#89DDFF">n"</span><span style="color:#89DDFF">,</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">content_type</span><span style="color:#89DDFF">)?;</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">		// ...</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Notice how it looks very similar to the implementation of for Display!</p>
+	    <p>With the first approch, going <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpResponse</span></span></code></span> --> utf-8 string through <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Display</span></span></code></span> --> bytes, I ran into lots of problems, especially related to the hexadecimal representation, with new utf-8 characters being inserted vs although I just wanted to <em>write</em> the exact raw bytes to the tcp stream. This got me falling into the string, UTF-8, bytes rabbit hole, but I stopped before going too far down this one (for now!).</p>
+	    <p>Also, relying on the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Display</span></span></code></span> trait really came to bite me when implementing gzip-compression feature, which is when I had to stop and rethink the strategy, ultimatly going the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">write_to</span></span></code></span> route.</p>
+	    <h2>Performance</h2>
+	    <h3>Concurrency</h3>
+	    <p>In the real world, an HTTP server may deal with multiple quasi-simultaneous requests. These are typically independent: one request might be client A asking for index.html, while another from client B requires a database query.</p>
+	    <p>To handle this concurrency, there are two broad strategies. Using:</p>
+	    <ul>
+		<li>a multi-threaded architecture ('true' parallelism, using multiple OS threads)</li>
+		<li>or an asynchronous architecture (single thread with non-blocking calls).</li>
+	    </ul>
+	    <p>As I am learning Rust through the <a href="https://doc.rust-lang.org/stable/book/title-page.html">book</a>, I followed its <a href="https://doc.rust-lang.org/stable/book/ch21-02-multithreaded.html">multi-threaded server implementation</a>. It shows how to define a pool of workers, each executing tasks in their own thread, coordinated via message-passing communication.</p>
+	    <p>The key structure is the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">ThreadPool</span></span></code></span>:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#BB9AF7"> struct</span><span style="color:#C0CAF5"> ThreadPool</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    workers</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> Vec</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">Worker</span><span style="color:#89DDFF">>,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    sender</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> Option</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">mpsc</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Sender</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">Job</span><span style="color:#89DDFF">>>,</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">struct</span><span style="color:#C0CAF5"> Worker</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    id</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> usize</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    thread</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> Option</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">thread</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">JoinHandle</span><span style="color:#89DDFF">&#x3C;()>>,</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">type</span><span style="color:#C0CAF5"> Job</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> FnOnce</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> +</span><span style="color:#C0CAF5"> Send</span><span style="color:#89DDFF"> +</span><span style="color:#89DDFF"> '</span><span style="color:#C0CAF5">static</span><span style="color:#89DDFF">>;</span></span></code></pre></figure>
+	    <p>It organizes threads into a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Vec</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">Worker</span><span style="color:#89DDFF">></span></span></code></span>. The number of workers is fixed at the beginning. We don't want this number to skyrocket unbounded as the server receives more and more requests at once. Instead, new tasks (like handling a new TCP stream) are queued by the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">ThreadPool</span></span></code></span> and available workers pick them up to execute them.</p>
+	    <p>But how are tasks 'sent' from the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">ThreadPool</span></span></code></span> (on the main thread) to the workers (on other threads) ?</p>
+	    <p>The key to this inter-thread communication is the intermediate queue implemented using message-passing via <a href="https://doc.rust-lang.org/stable/book/ch16-02-message-passing.html">channels</a>:</p>
+	    <ul>
+		<li>The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">ThreadPool</span></span></code></span> owns the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Sender</span></span></code></span>, while every worker is given a shared (<span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Arc</span></span></code></span>) clone of the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">receiver</span></span></code></span>.</li>
+		<li>Then, worker enter a loop where they listen for a new tasks put on the communication channel (acting as the queue), execute it, and get back to listening.</li>
+	    </ul>
+	    <p>The type used to describe a 'task' here is <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Job</span></span></code></span>, an alias for the <em>trait object</em>: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> FnOnce</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> +</span><span style="color:#C0CAF5"> Send</span><span style="color:#89DDFF"> +</span><span style="color:#89DDFF"> '</span><span style="color:#C0CAF5">static</span><span style="color:#89DDFF">></span></span></code></span>.</p>
+	    <ul>
+		<li>The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Box</span></span></code></span> makes it a (smart) pointer to a block of memory allocated on the heap. What it points to is a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">dyn</span></span></code></span> type meaning it's size will only be known at runtime, it's dynamic. However the pointer size can always be known at compile-time, it's fixed whatever the size of the underlying object stored on the heap. The only thing we know at at compile time about this object is its trait bound: it will be <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#7AA2F7">FnOnce</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> +</span><span style="color:#C0CAF5"> Send</span><span style="color:#89DDFF"> +</span><span style="color:#89DDFF"> '</span><span style="color:#C0CAF5">static</span></span></code></span>.</li>
+		<li>The trait bound <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#7AA2F7">FnOnce</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> +</span><span style="color:#C0CAF5"> Send</span><span style="color:#89DDFF"> +</span><span style="color:#89DDFF"> '</span><span style="color:#C0CAF5">static</span></span></code></span> corresponds: to a function (or closure in our case!) you can call once (as it may consume variables), that is <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Send</span></span></code></span> meaning safe to pass between threads and <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#9D7CD8;font-style:italic">static</span></span></code></span> meaning references to this object can live as long as the program (lifetime is the lifetime of the program itself). This corresponds to a closure in our program that we want a thread to execute.</li>
+	    </ul>
+	    <p>In practice, each incoming connection is wrapped in a closure and sent to the thread pool for execution:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">for</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF"> in</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">incoming</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">    match</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	Ok</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">stream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	    // passing the closure we want a worker to execute</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	    pool</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">execute</span><span style="color:#89DDFF">(move</span><span style="color:#BB9AF7"> ||</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">		match</span><span style="color:#F7768E"> Self</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">handle_stream</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">stream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		    Ok</span><span style="color:#89DDFF">(())</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> println!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">Successfully handled stream</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">),</span></span>
+		<span data-line=""><span style="color:#C0CAF5">		    Err</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#7AA2F7"> eprintln!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">Error handling the stream: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">e</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">),</span><span style="color:#A9B1D6"> </span></span>
+		<span data-line=""><span style="color:#89DDFF">		};</span></span>
+		<span data-line=""><span style="color:#89DDFF">	    });</span></span>
+		<span data-line=""><span style="color:#89DDFF">	}</span></span>
+		<span data-line=""><span style="color:#C0CAF5">	Err</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">e</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#BB9AF7">	    return</span><span style="color:#C0CAF5"> Err</span><span style="color:#89DDFF">(</span><span style="color:#7AA2F7">format!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">Error accepting the connection: </span><span style="color:#89DDFF">{</span><span style="color:#9ECE6A">e</span><span style="color:#89DDFF">}"</span><span style="color:#89DDFF">).</span><span style="color:#7AA2F7">into</span><span style="color:#89DDFF">());</span></span>
+		<span data-line=""><span style="color:#89DDFF">	}</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>The closure takes ownership of the incoming stream (see the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">move</span></span></code></span> keyword) and calls <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">handle_stream</span></span></code></span> to process it.</p>
+	    <ul>
+		<li>The thread is typed as <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Option</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">thread</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">JoinHandle</span><span style="color:#89DDFF">&#x3C;()>></span></span></code></span>. The use of <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Option</span></span></code></span> is a trick to allow taking ownership of the thread handle later (e.g., when shutting down the thread), as Rust doesn't allow moving out of a struct field unless it's wrapped in an <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Option</span></span></code></span>. This enables calling <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">take</span><span style="color:#89DDFF">()</span></span></code></span> on the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Option</span></span></code></span>, leaving <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">None</span></span></code></span> behind and transferring ownership of the actual handle.</li>
+	    </ul>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> Drop</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> ThreadPool</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> drop</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#7AA2F7">        drop</span><span style="color:#89DDFF">(</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">sender</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">take</span><span style="color:#89DDFF">());</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">        for</span><span style="color:#C0CAF5"> worker</span><span style="color:#89DDFF"> in</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">workers </span><span style="color:#89DDFF">{</span></span>
+		<span data-line=""><span style="color:#7AA2F7">            println!</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">Shutting down worker </span><span style="color:#89DDFF">{}"</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> worker</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">id</span><span style="color:#89DDFF">);</span></span>
+		<span data-line=""> </span>
+		<span data-line=""><span style="color:#BB9AF7">            if</span><span style="color:#BB9AF7"> let</span><span style="color:#C0CAF5"> Some</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">thread</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> worker</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">thread</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">take</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> {</span><span style="color:#51597D;font-style:italic"> // taking ownership of the thread using the Option trick</span></span>
+		<span data-line=""><span style="color:#C0CAF5">                thread</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">join</span><span style="color:#89DDFF">().</span><span style="color:#7AA2F7">unwrap</span><span style="color:#89DDFF">();</span></span>
+		<span data-line=""><span style="color:#89DDFF">            }</span></span>
+		<span data-line=""><span style="color:#89DDFF">        }</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <ul>
+		<li><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">JoinHandle</span><span style="color:#89DDFF">&#x3C;()></span></span></code></span> is a handle to a spawned thread, which can be used to wait for the thread to finish (by calling <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">join</span><span style="color:#89DDFF">()</span></span></code></span>). The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">()</span></span></code></span> means the thread returns no meaningful value - it just returns the unit type <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#89DDFF">()</span></span></code></span>.</li>
+	    </ul>
+	    <p>A very exciting next step will be to add some async flavour to this implementation to really push performance up.</p>
+	    <h3>Static vs Dynamic Dispatch</h3>
+	    <h4>Enum Approach</h4>
+	    <p>To represent the different endpoints my HTTP server supports, I wrote an <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Endpoint</span></span></code></span> enum:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#BB9AF7"> enum</span><span style="color:#C0CAF5"> Endpoint</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Echo</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    UserAgent</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Sleep</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    File</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    UrlPath</span><span style="color:#89DDFF">,</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Once an <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpRequest</span></span></code></span> has been parsed, I determine which endpoint it targets and use a large <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#BB9AF7">match</span></span></code></span> statement to handle each case:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">match</span><span style="color:#F7768E"> self</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Endpoint</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Echo</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	// handle echo request</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Endpoint</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">UserAgent</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	// handle user-agent request</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#C0CAF5">    Endpoint</span><span style="color:#89DDFF">::</span><span style="color:#C0CAF5">Sleep</span><span style="color:#89DDFF"> =></span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">	// handle sleep request</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">    // And so on ... This match statement goes on listing all `Endpoint` variant.</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <h4>Trait Approach</h4>
+	    <p>However there is an alternative design! One can use <em>trait objects</em>. Instead of a centralized match, you define something like a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">RequestHandler</span></span></code></span> trait:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">trait</span><span style="color:#C0CAF5"> RequestHandler</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> handle_request</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> req</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#C0CAF5">HttpRequest</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Each endpoint becomes a separate type that implements this trait. For example:</p>
+	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">struct</span><span style="color:#C0CAF5"> EchoHandler</span><span style="color:#89DDFF">;</span></span>
+		<span data-line=""><span style="color:#89DDFF">impl</span><span style="color:#C0CAF5"> RequestHandler</span><span style="color:#BB9AF7"> for</span><span style="color:#C0CAF5"> EchoHandler</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> handle</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> req</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> &#x26;</span><span style="color:#C0CAF5">HttpRequest</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> HttpResponse</span><span style="color:#89DDFF"> {</span></span>
+		<span data-line=""><span style="color:#51597D;font-style:italic">        // implementation here</span></span>
+		<span data-line=""><span style="color:#89DDFF">    }</span></span>
+		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
+	    <p>Now, instead of matching, you just call <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">handler</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">handle</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">request</span><span style="color:#89DDFF">)</span></span></code></span> - the correct method is chosen at <em>runtime</em> via <em>dynamic dispatch</em> (using a v-table internally).</p>
+	    <p><strong>Trade-Offs</strong></p>
 
 
-    <div id="search-modal" class="fixed inset-0 flex items-start justify-center hidden z-50 pointer-events-none">
-      <!-- This transparent overlay will only capture clicks outside the modal -->
-      <div id="search-backdrop" class="absolute inset-0 pointer-events-auto" style="background: rgba(0, 0, 0, 0.3);"></div>
 
-      <div class="bg-gray-800 bg-opacity-90 backdrop-blur-sm w-full max-w-xl mx-auto mt-20 rounded-lg shadow-lg overflow-hidden pointer-events-auto border border-gray-700">
-        <div class="p-4 border-b border-gray-700 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mr-3">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" id="search-input" class="w-full bg-transparent border-none outline-none text-white" placeholder="Search for anything..." autofocus>
-          <div class="text-gray-400 text-sm ml-2">ESC to close</div>
-        </div>
-        <div id="search-results" class="max-h-96 overflow-y-auto">
-          <!-- Results will appear here -->
-        </div>
-      </div>
-    </div>
 
-    <script src="./search.js"></script>
 
-  </body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	    <table><thead><tr><th>Enum-based (Static Dispatch)</th><th>Trait-based (Dynamic Dispatch)</th></tr></thead><tbody><tr><td>Fast (compile-time dispatch)</td><td>Slightly slower (runtime lookup)</td></tr><tr><td>Centralized logic via <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#BB9AF7">match</span></span></code></span></td><td>Decentralized via trait impls</td></tr><tr><td>Harder to extend without editing internals</td><td>Easy to extend without modifying core logic</td></tr><tr><td>Great for small, known sets</td><td>Great for plugin-style extensibility</td></tr></tbody></table>
+	    <p><strong>When to use which ?</strong>
+		The enum-based approach works well for <strong>small-scale</strong>, <strong>tightly scoped</strong> projects where you control all endpoints. But as the number of endpoints grows—or if you want to let users <strong>extend the server as a library</strong>—the trait-based approach scales much better.</p>
+	    <p>With traits, adding a new endpoint just means implementing the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">RequestHandler</span></span></code></span> trait. No need to touch the internals of the dispatcher logic.</p>
+	    <blockquote>
+		<p>Think of the enum version as a monolith. The trait version is more like a plugin system.</p>
+	    </blockquote>
+	    <p>Notes:</p>
+	    <ul>
+		<li>In the trait approach, you’d typically have some routing logic that maps the request path to a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Box</span><span style="color:#89DDFF">&#x3C;dyn</span><span style="color:#C0CAF5"> RequestHandler</span><span style="color:#89DDFF">></span></span></code></span>.</li>
+		<li>You can combine both approaches: enums for internal core endpoints, traits for user-extensible ones</li>
+	    </ul>
+	    <h2>Next Steps</h2>
+	    <ul>
+		<li>
+		    <p>go async</p>
+		</li>
+		<li>
+		    <p>move to using an error-handling crate like thiserror or anyhow</p>
+		</li>
+		<li>
+		    <p>try to allocate less, go more zero-copy</p>
+		</li>
+		<li>
+		    <p>design/run proper benchmarks</p>
+		</li>
+		<li>
+		    <p>building a more robust configuration + logging system</p>
+		</li>
+		<li>
+		    <p>better tests, unit and integration</p>
+		</li>
+		<li>
+		    <p>fuzzing my request parser ?</p>
+		</li>
+	    </ul>
+	    <h3>Try TCP from scratch ?</h3>
+	    <p>Very different from writing an HTTP server "from scratch". See how the boss <a href="https://youtu.be/bzja9fQWzdA?si=r8hsF_4zSimQMXuF">Jon Gjengset</a> tackles this problem!</p>
+	    <p>TCP abstraction we leverage actually makes use of the TCP impl. by the OS. That's why writing and running your own TCP server? is more tricky than http, you have to bypass this service from the OS (see Jon streams on TCP).</p>
+	</main>
+
+	<footer class="py-10 text-xl">
+	    <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
+		<ul class="flex space-x-4">
+		    <li><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
+		    <li><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
+		</ul>
+	    </nav>
+
+	</footer>
+
+
+	<div id="search-modal" class="fixed inset-0 flex items-start justify-center hidden z-50 pointer-events-none">
+	    <!-- This transparent overlay will only capture clicks outside the modal -->
+	    <div id="search-backdrop" class="absolute inset-0 pointer-events-auto" style="background: rgba(0, 0, 0, 0.3);"></div>
+
+	    <div class="bg-gray-800 bg-opacity-90 backdrop-blur-sm w-full max-w-xl mx-auto mt-20 rounded-lg shadow-lg overflow-hidden pointer-events-auto border border-gray-700">
+		<div class="p-4 border-b border-gray-700 flex items-center">
+		    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mr-3">
+			<circle cx="11" cy="11" r="8"></circle>
+			<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+		    </svg>
+		    <input type="text" id="search-input" class="w-full bg-transparent border-none outline-none text-white" placeholder="Search for anything..." autofocus>
+		    <div class="text-gray-400 text-sm ml-2">ESC to close</div>
+		</div>
+		<div id="search-results" class="max-h-96 overflow-y-auto">
+		    <!-- Results will appear here -->
+		</div>
+	    </div>
+	</div>
+
+	<script src="./search.js"></script>
+
+    </body>
 
 </html>
+
+
