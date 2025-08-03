@@ -1,51 +1,155 @@
-@import "tailwindcss";
-@config "./tailwind.config.js";
+@import 'tailwindcss';
 
-@layer base {
-  h1, .h1 {
-    @apply text-3xl my-8 mx-2;
+@theme inline {
+  /* Text neutrals */
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+
+  /* Text accents */
+  --color-accent-h1: var(--accent-h1);
+  --color-accent-h2: var(--accent-h2);
+  --color-accent-h3: var(--accent-h3);
+  --color-accent-h4: var(--accent-h4);
+
+  /* Backgrounds */
+  --color-bg-base: var(--bg-base);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-bold: var(--bg-bold);
+  --color-bg-accent-1: var(--bg-accent-1);
+  --color-bg-accent-2: var(--bg-accent-2);
+
+  /* Semantic states */
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-success: var(--success);
+
+  /* Links */
+  --color-link-primary: var(--link-primary);
+  --color-link-hover: var(--link-hover);
+  --color-link-visited: var(--link-visited);
+}
+
+ [data-theme=tokyo-night] {
+  /* Text neutrals */
+  --neutral-50:  #c0caf5;
+  --neutral-100: #a9b1d6;
+  --neutral-200: #9aa5ce;
+
+  --neutral-500: #565f89;
+  --neutral-600: #414868;
+
+  --neutral-800: #24283b;
+  --neutral-900: #1a1b26;
+
+  /* Text accents */
+  --accent-h1: #f7768e; /* red */
+  --accent-h2: #7aa2f7; /* blue */
+  --accent-h3: #bb9af7; /* purple */
+  --accent-h4: #cfc9c2; /* sand */
+
+  /* Backgrounds */
+  --bg-base: var(--neutral-800);
+  --bg-subtle: var(--neutral-600);
+  --bg-bold: var(--neutral-200);
+  --bg-accent-1: var(--accent-h1);
+  --bg-accent-2: var(--accent-h2);
+
+  /* Semantic states */
+  --info: #73daca;
+  --warning: #ff9e64;
+  --error: #f7768e;
+  --success: #9ece6a;
+
+  /* Links */
+  --link-primary: #7dcfff;
+  --link-hover: 2ac3de ;
+  --link-visited: #bb9af7;
   }
 
-  hr, .hr {
+
+/* https://tailwindcss.com/docs/adding-custom-styles#adding-component-classes */
+@layer components {
+
+  body {
+    font-family: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  h1 {
+      @apply text-3xl text-accent-h1 mb-4
+  }
+  h2 {
+      @apply text-2xl text-accent-h2 mb-4 pt-4
+  }
+  h3 {
+      @apply text-xl text-accent-h3 mb-4 
+  }
+  h4 {
+      @apply text-lg text-accent-h4 mb-4 
+  }
+
+
+  /* not yet working. Look into tailwind layers */
+  .blog-post .post-hero h3,
+  .blog-post .post-hero p {
+    @apply mb-2; 
+  }
+
+  .first-h2 {
+    @apply text-2xl text-accent-h2 mb-4 pt-0
+  }
+
+  .blog-post p {
+      @apply text-lg mb-6
+  }
+
+  .blog-post ol {
+    @apply text-lg ml-4 list-decimal mb-4
+  }
+
+  .blog-post ul {
+    @apply text-lg ml-4 list-disc mb-4
+  }
+
+  .blog-post a {
+    color: var(--link-primary)
+  }
+  .blog-post a:visited {
+    color: var(--link-visited);
+    text-decoration: none;
+  }
+  .blog-post a:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+  }
+  .blog-post a:active {
+    text-decoration: underline;
+  }
+
+  .blog-post img {
+    @apply my-4;
+
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .blog-post blockquote {
+    @apply m-4;
+  }
+  .blog-post blockquote > p {
     @apply m-2;
   }
 
-  h2, .h2 {
-    @apply text-2xl my-4 mx-2;
+  .blog-post figure {
+    @apply mb-4 text-base
   }
 
-  h3, .h3 {
-    @apply text-xl my-4 mx-2;
-  }
-
-  p, .paragraph {
-    @apply  m-2;
-  }
-
-  main li {
-    @apply ml-6 list-disc text-base;
-  }
-
-  main ul {
-    @apply mb-4
-  }
-
-  blockquote, .blockquote {
-    @apply mb-4;
-  }
 }
 
-pre {
-  overflow-x: auto;
-  padding: 1rem;
-}
-
-code[data-line-numbers] {
-  counter-reset: line;
-}
-
-code[data-line-numbers] > [data-line]::before {
-  counter-increment: line;
-  content: counter(line);
-  /* style line numbers */
-}

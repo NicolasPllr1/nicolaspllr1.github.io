@@ -1,21 +1,21 @@
 <!doctype html>
-<html class="tokyo-night">
+<html data-theme="tokyo-night">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="./output.css" rel="stylesheet" />
+    <link href="/output.css" rel="stylesheet" />
   </head>
 
-  <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
+  <body class="flex flex-col max-w-3xl mx-auto h-screen text-neutral-50 bg-bg-base">
 
     <header class="py-10">
-      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
+      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-bg-subtle">
         <ul class="flex space-x-4 items-center">
-          <li><a href="/" class=""> home </a></li>
-          <li><a href="./blog.html" class="underline underline-offset-2"> writes </a></li>
-          <li><a href="./reading_list.html" class=""> reads </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="/"> home </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="./blog.html" class="underline underline-offset-2"> writes </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="./reading_list.html" class=""> reads </a></li>
         </ul>
-        <p class="info"> cmd+k </p>
+        <p class="info hover:text-neutral-200 hover:text-neutral-200 transition duration-100 ease"> cmd+k </p>
       </nav>
     </header>
 
@@ -24,17 +24,15 @@
       <div class="space-y-4">
 
         <div onclick="location.href='posts/http-server-rust/post.html'"
-          class="group cursor-pointer bg-accent p-4 rounded hover:shadow-md border border-secondary hover:border-[#3d59a1]">
-          <h3 class="text-2xl ml-2">Mini HTTP/1.1 Server (in Rust)</h3>
-          <h4 class="ml-2">May 2025</h4>
-          <p>I wrote an <em>almost</em> spec-compliant HTTP/1.1 server in Rust</p>
+          class="group cursor-pointer bg-bg-base p-4 rounded-xl hover:bg-neutral-900 border border-[#7aa2f7] hover:border-accent-h3 transition duration-100 ease-out">
+          <h3 class="text-2xl text-accent-h3 ml-2">Mini HTTP/1.1 Server (in Rust)</h3>
+          <p class="ml-2">I wrote an <em>almost</em> spec-compliant HTTP/1.1 server in Rust</p>
         </div>
 
         <div onclick="location.href='posts/networks-intro/post.html'"
-          class="group cursor-pointer bg-accent p-4 rounded hover:shadow-md border border-secondary hover:border-[#3d59a1]">
-          <h3 class="text-2xl ml-2">Intro to Networks</h3>
-          <h4 class="ml-2">April 2025</h4>
-          <p>Before calling high-level APIs - Berkeley sockets style <code>accept</code>, <code>send</code>/<code>recv</code>, <code>connect</code>, ... - let's build our <em>foundations</em> first.</p>
+          class="group cursor-pointer bg-bg-base p-4 rounded-xl hover:bg-neutral-900 border border-[#7aa2f7] hover:border-accent-h3 transition duration-100 ease-out">
+          <h3 class="text-2xl text-accent-h3 ml-2">Intro to Networks</h3>
+          <p class="ml-2">Before calling high-level APIs - Berkeley sockets style <code>accept</code>, <code>send</code>/<code>recv</code>, <code>connect</code>, ... - let's build our <em>foundations</em> first.</p>
         </div>
 
       </div>
@@ -44,8 +42,8 @@
     <footer class="py-10 text-xl">
       <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
         <ul class="flex space-x-4">
-          <li><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
-          <li><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
         </ul>
       </nav>
 

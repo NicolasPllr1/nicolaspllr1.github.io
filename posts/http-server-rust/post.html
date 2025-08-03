@@ -1,33 +1,32 @@
 <!doctype html>
-<html class="tokyo-night">
-    <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link href="/output.css" rel="stylesheet" />
-    </head>
+<html data-theme="tokyo-night">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/output.css" rel="stylesheet" />
+  </head>
 
-    <body class="flex flex-col max-w-3xl mx-auto h-screen text-white">
+  <body class="flex flex-col max-w-3xl mx-auto h-screen text-neutral-50 bg-bg-base">
 
-	<header class="py-10">
-	    <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-accent">
-		<ul class="flex space-x-4 items-center">
-		    <li><a href="/" > home </a></li>
-		    <li><a href="/blog.html"> writes </a></li>
-		    <li><a href="/reading_list.html" class=""> reads </a></li>
-		</ul>
-		<p class="info"> cmd+k </p>
-	    </nav>
-	</header>
+    <header class="py-10">
+      <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-bg-subtle">
+        <ul class="flex space-x-4 items-center">
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="/"> home </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="/blog.html"> writes </a></li>
+          <li class="hover:text-neutral-200 transition duration-100 ease"><a href="/reading_list.html"> reads </a></li>
+        </ul>
+        <p class="info hover:text-neutral-200 hover:text-neutral-200 transition duration-100 ease"> cmd+k </p>
+      </nav>
+    </header>
 
-	<main class="flex-grow justify-between">
-	    <h1 class="mb-4">HTTP Server in Rust</h1>
-	    <div class="flex justify-between">
-		<h3>May 2025</h3>
-		<p class="warning px-4">~5k words</p>
+	<main class="flex-grow justify-between blog-post">
+	    <h1>HTTP Server in Rust</h1>
+	    <div class="flex justify-between post-hero">
+		<h3> May 2025</h3>
+		<p class="text-warning text-xl px-4">~5k words</p>
 	    </div>
-	    <hr>
-
-	    <h2>Why Write an HTTP-Server</h2>
+	    <hr class="mt-2 mb-4">
+	    <h2 class="first-h2">Why Write an HTTP-Server</h2>
 	    <p>I wrote an almost spec-compliant HTTP/1.1 server in Rust to demystify networks.<br>
 		In this post I go over the architecture and explain the main parts as well as interesting stuff I learned along the way.
 		Code: nicolaspllr1/mini-http-server on github.</p>
@@ -36,7 +35,9 @@
 		- Compute
 		- Memory
 		- Storage</p>
-	    <p><img src="./assets/tigerbeetle_four_primary_colours.png" width="400"></p>
+	    
+	    <img src="./assets/tigerbeetle_four_primary_colours.png" width="400">
+
 	    <p>Programming is about composing systems from these fundamental domains. Among the four, <em>networks</em> were particularly mysterious to me. Take the Internet, how can this possibly work ?</p>
 	    <p>So I <a href="https://nicolaspllr1.github.io/posts/networks-intro/post.html">studied the theory</a> on one hand, and on the other, I got busy with 2 practical projects to build solid foundations:</p>
 	    <ul>
@@ -71,8 +72,10 @@
 	    <h2>Server Architecture - Looping Over Incoming Requests</h2>
 	    <h3>Core Architecture</h3>
 	    <p>At its core, the HTTP server runs an event loop: it listens for incoming TCP connections, processes the HTTP request, generates a response, and sends it back.</p>
-	    <p>We’re in the classic client/server situation:
-		<img src="./assets/http_client_server_situation_sequence_diragram.svg" width="400"></p>
+	    <p>We’re in the classic client/server situation:<p>
+
+		<img src="./assets/http_client_server_situation_sequence_diragram.svg" width="400">
+
 	    <p>So the heart of the HTTP server is this <strong>loop over incoming requests</strong>:</p>
 
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// listening for TCP requests coming in at our address</span></span>
@@ -82,7 +85,7 @@
 		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
 	    <p>Each <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">stream</span></span></code></span> represents a connection from a client. We handle them in 3 steps:</p>
 
-	    <ol>
+	    <ol class="mb-4 list-decimal">
 		<li><strong>Parsing the incoming http-request.</strong>
 		    The request is received as a "byte stream" through the TCP connection. The bytes are parsed assuming the HTTP protocol is followed.</li>
 		<li><strong>Constructing an http-response.</strong>
@@ -90,6 +93,7 @@
 		<li><strong>Send the response.</strong>
 		    The response is sent back to the client through the TCP connection.</li>
 	    </ol>
+
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">fn</span><span style="color:#7AA2F7"> handle_stream</span><span style="color:#89DDFF">(</span><span style="color:#9D7CD8;font-style:italic">mut</span><span style="color:#C0CAF5"> stream</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> TcpStream</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> Result</span><span style="color:#89DDFF">&#x3C;(),</span><span style="color:#C0CAF5"> HandlingError</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> {</span></span>
 		<span data-line=""><span style="color:#A9B1D6">	</span></span>
 		<span data-line=""><span style="color:#51597D;font-style:italic">    // parse request</span></span>
@@ -152,17 +156,21 @@
 	    <h3>Berkeley Sockets</h3>
 	    <p>Let's explain what is a "socket". Before working on this project, I had often heard expression like "socket programming" or just the term "socket" but never understood what this was all about.</p>
 	    <p>A <a href="https://en.wikipedia.org/wiki/Network_socket#">network socket</a> is an <em>abstract reference to a communication endpoint</em>. It acts as a <a href="https://en.wikipedia.org/wiki/Handle_(computing)">"handle"</a> on the endpoint <strong>providing an API for the communication</strong> path from one end's perspective.</p>
-	    <p>This means a socket can be used to perform operation on the communication endpoint - think sending/receiving data. In the Unix spirit (<a href="https://en.wikipedia.org/wiki/Everything_is_a_file">"everything is a file"</a>),  a socket abstracts the communication endpoint as a file descriptor although the analogy has its limits (which?). The parallels between doing file I/O and networking I/O include comparing read/write with receive/send. .</p>
-	    <p><img src="./assets/socket_file_descriptor_analogy.svg" alt="flowchart illustrating the parallel between network I/O and file I/O" width="500">
-		note: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">sd</span></span></code></span> for socket descriptor, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">fd</span></span></code></span> for file descriptor</p>
+	    <p>This means a socket can be used to perform operation on the communication endpoint - think sending/receiving data. In the Unix spirit (<a href="https://en.wikipedia.org/wiki/Everything_is_a_file">"everything is a file"</a>),  a socket abstracts the communication endpoint as a file descriptor although the analogy has its limits (which?). The parallels between doing file I/O and networking I/O include comparing read/write with receive/send.</p>
+	    
+	    <img src="./assets/socket_file_descriptor_analogy.svg" alt="flowchart illustrating the parallel between network I/O and file I/O" width="500">
+
+	    <p>	note: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">sd</span></span></code></span> for socket descriptor, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">fd</span></span></code></span> for file descriptor</p>
 	    <p>A socket to do networking on the internet is defined by <a href="https://en.wikipedia.org/wiki/Network_socket#Implementation">three pieces of information</a>:</p>
 	    <ul>
 		<li>a local socket address: IP address + port</li>
 		<li>a remote socket address: IP address + port</li>
 		<li>a transport protocol: say TCP or UDP</li>
 	    </ul>
-	    <p>See this example of a full network socket definition:
-		<img src="./assets/socket_triplet.svg" alt="triplet defining networking socket" width="500"></p>
+	    <p>See this example of a full network socket definition:<p>
+		
+		<img src="./assets/socket_triplet.svg" alt="triplet defining networking socket" width="500">
+
 	    <ul>
 		<li>Local socket address: here a <em>private</em> IP address from the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#FF9E64">192</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">168</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">/</span><span style="color:#FF9E64">16</span></span></code></span> range (defined in <a href="https://www.rfc-editor.org/rfc/rfc1918">RFC 1918 :  "Address Allocation for Private Internets"</a>) with the standard port for HTTP (80)</li>
 		<li>Remote socket address: here an IP address is from the <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#FF9E64">203</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">113</span><span style="color:#89DDFF">.</span><span style="color:#FF9E64">0</span><span style="color:#89DDFF">/</span><span style="color:#FF9E64">24</span></span></code></span> block. This block is specifically reserved for <em>documentation and examples</em> (as per <a href="https://www.rfc-editor.org/rfc/rfc5737">RFC 5737 : "IPv4 Address Blocks Reserved for Documentation"</a>) + the standard port for HTTPS (443)</li>
@@ -174,8 +182,10 @@
 		<li><a href="https://dev-doc.rust-lang.org/stable/std/net/struct.TcpListener.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpListener</span></span></code></span></a> represents a listening socket</li>
 		<li><a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></a> , represents a connected socket ready to send/receive data</li>
 	    </ul>
-	    <p>Rust structs and their traits/methods maps to the historical <a href="https://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley sockets</a> API:
-		<img src="./assets/berkeley_sockets_primitives.png" width="400"></p>
+	    <p>Rust structs and their traits/methods maps to the historical <a href="https://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley sockets</a> API:<p>
+
+		<img src="./assets/berkeley_sockets_primitives.png" width="400">
+
 	    <p>A <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span> can be obtained from a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpListener</span></span></code></span> after  <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">bind</span></span></code></span>ing the listener to a particular socket-address: ip address + port number, remember the triplet.
 		Then, you call <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">incoming</span></span></code></span> on the binded listener. This gives us an iterator over incoming TCP requests to our local ip address + port.</p>
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#C0CAF5"> listener</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> TcpListener</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">bind</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">local_socket_addr</span><span style="color:#89DDFF">)?;</span></span>
@@ -227,17 +237,24 @@
 		<li>if you plan to read multiple times from the same source, typically one line at a time, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> is perfect. The buffer overhead is well-worth it as you pay for fewer "true" reads - built upon system calls. Instead you read from memory which is faster.</li>
 	    </ul>
 	    <p>The Rust doc for <a href="https://doc.rust-lang.org/std/io/struct.BufReader.html"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> struct</a> summarizes this clearly:</p>
+
 	    <blockquote>
 		<p>The <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> struct adds buffering to any reader.</p>
 		<p>It can be excessively inefficient to work directly with a <a href="https://doc.rust-lang.org/std/io/trait.Read.html" title="trait std::io::Read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span></a> instance. For example, every call to <a href="https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read" title="method std::net::TcpStream::read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read</span></span></code></span></a> on <a href="https://doc.ru%E2%88%8Fst-lang.org/std/net/struct.TcpStream.html" title="struct std::net::TcpStream"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">TcpStream</span></span></code></span></a> results in a system call. A <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> performs large, infrequent reads on the underlying <a href="https://doc.rust-lang.org/std/io/trait.Read.html" title="trait std::io::Read"><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span></a> and maintains an in-memory buffer of the results.</p>
-		<p><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> can improve the speed of programs that make <em>small</em> and <em>repeated</em> read calls to the same file or network socket. It does not help when reading very large amounts at once, or reading just one or a few times. It also provides no advantage when reading from a source that is already in memory, like a <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html"> <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Vec</span><span style="color:#C0CAF5"></a>.</p>
+		<p><span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufReader</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">R</span><span style="color:#89DDFF">></span></span></code></span> can improve the speed of programs that make <em>small</em> and <em>repeated</em> read calls to the same file or network socket. It does not help when reading very large amounts at once, or reading just one or a few times. It also provides no advantage when reading from a source that is already in memory, like a <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html" target="_blank"> <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Vec</span></span></code></a>.</p>
 	    </blockquote>
+
 	    <h4>Toy Benchmark</h4>
 	    <p>I spun up a quick benchmark - I admit courtesy of my favourite LLM - to measure the difference between looping over plain  reads and looping over buffered reads over a big text file.</p>
+
 	    <p>Benchmarks with <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">hyperfine</span></span></code></span>. On Debug and Release builds, <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">BufRead</span></span></code></span> method was respectively <strong>4.95x and 23.6x faster</strong> than <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Read</span></span></code></span> method:</p>
-	    <p><img src="./assets/read_normal_vs_buf_bench_debug_and_release.png" alt="normal vs buffured read benchamrk, debug and realase, using hyperfine" width="500" </img></p>
+
+		<img src="./assets/read_normal_vs_buf_bench_debug_and_release.png" alt="normal vs buffured read benchamrk, debug and realase, using hyperfine" width="500" </img>
+
 	    <h4>Practical Examples from my HTTP Server</h4>
+
 	    <p>Example reading the body. In this case, the reader is already a buffered reader as we first read line by line the incoming payload. But when it comes to the body, we know its length in bytes. So we only have to read once: <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">read_exact</span></span></code></span> is perfect as we know how much bytes we want.</p>
+
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// Read the *body* if any</span></span>
 		<span data-line=""><span style="color:#BB9AF7">if</span><span style="color:#BB9AF7"> let</span><span style="color:#C0CAF5"> Some</span><span style="color:#89DDFF">(</span><span style="color:#C0CAF5">n_bytes_str</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> headers</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">get</span><span style="color:#89DDFF">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">content-length</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> {</span></span>
 		<span data-line=""><span style="color:#BB9AF7">	let</span><span style="color:#C0CAF5"> n_bytes</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> n_bytes_str</span></span>
@@ -251,7 +268,9 @@
 		<span data-line=""> </span>
 		<span data-line=""><span style="color:#C0CAF5">	builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_body</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">body</span><span style="color:#89DDFF">);</span></span>
 		<span data-line=""><span style="color:#89DDFF">};</span></span></code></pre></figure>
+
 	    <p>But when parsing headers, I use one <em>read</em> call for every single header. A buffered read is way more efficient in this case:</p>
+
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic">// Read eventual *headers*</span></span>
 		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> headers</span><span style="color:#89DDFF">:</span><span style="color:#C0CAF5"> HashMap</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">String</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> HashMap</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">();</span></span>
 		<span data-line=""><span style="color:#BB9AF7">let</span><span style="color:#9D7CD8;font-style:italic"> mut</span><span style="color:#C0CAF5"> header_line</span><span style="color:#89DDFF"> =</span><span style="color:#C0CAF5"> String</span><span style="color:#89DDFF">::</span><span style="color:#7AA2F7">new</span><span style="color:#89DDFF">();</span></span>
@@ -271,10 +290,14 @@
 		<span data-line=""><span style="color:#89DDFF">}</span></span>
 		<span data-line=""> </span>
 		<span data-line=""><span style="color:#C0CAF5">builder</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">with_headers</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">headers</span><span style="color:#89DDFF">);</span></span></code></pre></figure>
+
 	    <h2>Constructing Responses</h2>
 	    <h3>Builder Pattern</h3>
+
 	    <p>Classic of programming but had never implemented one as the need never arose. Here, I was creating lots of <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">HttpResponse</span></span></code></span>s with minor differences in one big match statement. Using the builder-pattern significantly reduces the loc and increased readibilty in this part of the code. I also used it to build the [[#Parsing Incoming Requests|HttpRequest]] as you saw previously.</p>
+
 	    <p>Typical <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">Builder</span></span></code></span> trait. I need a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">new</span></span></code></span> method to get one, and a <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">build</span></span></code></span> to build what the builder is supposed to build - the generic type <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">T</span></span></code></span>:</p>
+
 	    <figure data-rehype-pretty-code-figure="" class="bg-secondary text-sm"><pre tabindex="0" data-language="rust" data-theme="tokyo-night"><code data-language="rust" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#89DDFF">pub</span><span style="color:#BB9AF7"> trait</span><span style="color:#C0CAF5"> Builder</span><span style="color:#89DDFF">&#x3C;</span><span style="color:#C0CAF5">T</span><span style="color:#89DDFF">></span><span style="color:#89DDFF"> {</span></span>
 		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> new</span><span style="color:#89DDFF">()</span><span style="color:#89DDFF"> -></span><span style="color:#F7768E"> Self</span><span style="color:#89DDFF">;</span></span>
 		<span data-line=""><span style="color:#89DDFF">    fn</span><span style="color:#7AA2F7"> build</span><span style="color:#89DDFF">(</span><span style="color:#F7768E">self</span><span style="color:#89DDFF">)</span><span style="color:#89DDFF"> -></span><span style="color:#C0CAF5"> T</span><span style="color:#89DDFF">;</span></span>
@@ -552,31 +575,8 @@
 		<span data-line=""><span style="color:#89DDFF">    }</span></span>
 		<span data-line=""><span style="color:#89DDFF">}</span></span></code></pre></figure>
 	    <p>Now, instead of matching, you just call <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#C0CAF5">handler</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">handle</span><span style="color:#89DDFF">(&#x26;</span><span style="color:#C0CAF5">request</span><span style="color:#89DDFF">)</span></span></code></span> - the correct method is chosen at <em>runtime</em> via <em>dynamic dispatch</em> (using a v-table internally).</p>
-	    <p><strong>Trade-Offs</strong></p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	    
+	    <h4>Trade-Offs</h4>
 
 	    <table><thead><tr><th>Enum-based (Static Dispatch)</th><th>Trait-based (Dynamic Dispatch)</th></tr></thead><tbody><tr><td>Fast (compile-time dispatch)</td><td>Slightly slower (runtime lookup)</td></tr><tr><td>Centralized logic via <span data-rehype-pretty-code-figure=""><code data-language="rust" data-theme="tokyo-night"><span data-line=""><span style="color:#BB9AF7">match</span></span></code></span></td><td>Decentralized via trait impls</td></tr><tr><td>Harder to extend without editing internals</td><td>Easy to extend without modifying core logic</td></tr><tr><td>Great for small, known sets</td><td>Great for plugin-style extensibility</td></tr></tbody></table>
 	    <p><strong>When to use which ?</strong>
@@ -622,8 +622,8 @@
 	<footer class="py-10 text-xl">
 	    <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
 		<ul class="flex space-x-4">
-		    <li><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
-		    <li><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
+		    <li class="hover:text-neutral-200 transition duration-100 ease"><a href="https://github.com/NicolasPllr1" target="_blank"> github </a></li>
+		    <li class="hover:text-neutral-200 transition duration-100 ease"><a href="https://x.com/nicolas_clark2" target="_blank"> x/twitter </a></li>
 		</ul>
 	    </nav>
 
@@ -649,7 +649,7 @@
 	    </div>
 	</div>
 
-	<script src="./search.js"></script>
+	<script src="/search.js"></script>
 
     </body>
 
