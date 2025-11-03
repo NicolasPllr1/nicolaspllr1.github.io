@@ -12,8 +12,13 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const dir = 'http-server-rust'
-const inputPath = path.join(__dirname, 'posts', dir, 'raw_post.md')
+const dir = 'python-type-hints-and-pydantic-rebuilds'
+const inputPath = path.join(
+  __dirname,
+  'posts',
+  dir,
+  'Python problem with type hints and how pydantic re-builds are affected.md'
+)
 const outputPath = path.join(__dirname, 'posts', dir, 'raw_post.html')
 
 const markdownContent = fs.readFileSync(inputPath, 'utf8')
@@ -28,7 +33,7 @@ async function convert() {
       theme: 'tokyo-night',
       keepBackground: false,
       showLineNumbers: true,
-      defaultLang: { block: 'rust', inline: 'rust' },
+      defaultLang: { block: 'python', inline: 'python' },
     })
     .use(rehypeStringify)
     .process(markdownContent)
