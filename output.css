@@ -562,18 +562,8 @@
       align-items: flex-start;
     }
   }
-  .md\:flex-row {
-    @media (width >= 48rem) {
-      flex-direction: row;
-    }
-  }
-  .md\:items-start {
-    @media (width >= 48rem) {
-      align-items: flex-start;
-    }
-  }
 }
-[data-theme=tokyo-night] {
+[data-theme='tokyo-night'] {
   --neutral-50: #c0caf5;
   --neutral-100: #a9b1d6;
   --neutral-200: #9aa5ce;
@@ -600,7 +590,7 @@
 }
 @layer components {
   body {
-    font-family: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   }
   h1 {
     margin-bottom: calc(var(--spacing) * 4);

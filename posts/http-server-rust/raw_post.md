@@ -6,19 +6,16 @@ I wrote an almost spec-compliant HTTP/1.1 server in Rust to demystify networks.
 In this post I go over the architecture and explain the main parts as well as interesting stuff I learned along the way.
 Code: nicolaspllr1/mini-http-server on github.
 
-A small passage from [Joran](https://x.com/jorandirkgreef)'s stellar [presentation of TigerBeetle](https://youtu.be/sC1B3d9C_sI?si=1Acye-_nJ1u-W2l9&t=202) stuck with me. There are  4 colours of programming :
-    - *Network*
-    - Compute
-    - Memory
-    - Storage
+A small passage from [Joran](https://x.com/jorandirkgreef)'s stellar [presentation of TigerBeetle](https://youtu.be/sC1B3d9C_sI?si=1Acye-_nJ1u-W2l9&t=202) stuck with me. There are 4 colours of programming : - _Network_ - Compute - Memory - Storage
 
 ![|400](tigerbeetle_four_primary_colours.png)
 
-Programming is about composing systems from these fundamental domains. Among the four, *networks* were particularly mysterious to me. Take the Internet, how can this possibly work ? 
+Programming is about composing systems from these fundamental domains. Among the four, _networks_ were particularly mysterious to me. Take the Internet, how can this possibly work ?
 
 So I [studied the theory](https://nicolaspllr1.github.io/posts/networks-intro/post.html) on one hand, and on the other, I got busy with 2 practical projects to build solid foundations:
+
 - an HTTP/1.1 server (**topic of this blog post**)
-- a (forwarding) DNS server 
+- a (forwarding) DNS server
 
 Implementing things really dispel all the magic that can seem daunting before doing the practical work.
 
@@ -32,17 +29,18 @@ note: DNS server impl. is [here](https://github.com/NicolasPllr1/mini-dns-server
 
 ### Codecrafters
 
-Kicked off my implementation embarking on  [codecrafters http-server](https://app.codecrafters.io/courses/http-server/introduction?repo=new) project. 
+Kicked off my implementation embarking on [codecrafters http-server](https://app.codecrafters.io/courses/http-server/introduction?repo=new) project.
 
 On every push to the distant repo, you benefit from their tests suite. This is awesome and helps a lot.
 On the contrary, at the end of the project, I added features not yet covered by their harness which made it way more painful to assure correctness.
 
 Finishing the codecrafters project, you will have implemented the very basics:
+
 - get/post request parsing on a couple of paths
 - leveraging headers
 - supporting gzip compression
 - response formatting, status codes
-This gets you from 0 to some level of understanding. Even if these features seem basic, concrete practice elevates theoretical understanding to another level.
+  This gets you from 0 to some level of understanding. Even if these features seem basic, concrete practice elevates theoretical understanding to another level.
 
 That's why theory and practice should be worked on concurrently (what's the best concurrency model for skill acquisition ? Is it the same in most fields? good questions!).
 
@@ -53,7 +51,7 @@ In my case, I wanted my server to serve [my own blog](https://nicolaspllr1.githu
 Small but important bits were missing - like properly identifying [content types](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type).
 I was lucky they added an extension to implement [keep-alive](https://hpbn.co/http1x/#benefits-of-keepalive-connections), which I wanted to add to get closer to full HTTP/1.1 compliance.
 
->It’s a good example of how small protocol details (like Content-Type: text/html) are critical in practice, even if they’re easy to overlook and/or simple to implement.
+> It’s a good example of how small protocol details (like Content-Type: text/html) are critical in practice, even if they’re easy to overlook and/or simple to implement.
 
 ## Server Architecture - Looping Over Incoming Requests
 
@@ -76,33 +74,33 @@ for stream in listener.incoming() {
 
 Each `stream` represents a connection from a client. We handle them in 3 steps:
 
-1. **Parsing the incoming http-request.** 
-The request is received as a "byte stream" through the TCP connection. The bytes are parsed assuming the HTTP protocol is followed.
+1. **Parsing the incoming http-request.**
+   The request is received as a "byte stream" through the TCP connection. The bytes are parsed assuming the HTTP protocol is followed.
 2. **Constructing an http-response.**
-The request is processed to build the appropriate response.
+   The request is processed to build the appropriate response.
 3. **Send the response.**
-The response is sent back to the client through the TCP connection.
+   The response is sent back to the client through the TCP connection.
 
 ```rust
 fn handle_stream(mut stream: TcpStream) -> Result<(), HandlingError> {
-	
+
     // parse request
     let http_request = HttpRequest::build_from_stream(&mut stream)?;
-	
+
     // construct response
     let http_response = HttpResponse::build_from_request(&http_request)?;
-	
+
     // send back response
     http_response.write_to(&mut stream)?;
-	
+
     Ok(())
 }
 ```
 
 ### Adding keepalive
 
-Keep-alive was surprisingly easy to add to my server, a simple while loop over a  boolean `keep_alive`, defaulting to true, and set to false based on the incoming request keep-alive header. 
-Although simple, this feature of HTTP/1.1 is very important for the performance of the protocol and one of the big changes going from 1.0 to 1.1. This is because HTTP often runs on top of TCP, and establishing TCP connections is not fast compared to a single round-trip between client and server. 
+Keep-alive was surprisingly easy to add to my server, a simple while loop over a boolean `keep_alive`, defaulting to true, and set to false based on the incoming request keep-alive header.
+Although simple, this feature of HTTP/1.1 is very important for the performance of the protocol and one of the big changes going from 1.0 to 1.1. This is because HTTP often runs on top of TCP, and establishing TCP connections is not fast compared to a single round-trip between client and server.
 
 See the chapter on [keep-alive](https://hpbn.co/http1x/#benefits-of-keepalive-connections) of the awesome [High Performance Browser Networking](https://hpbn.co/) by [Ilya Grigorik](https://ilya.grigorik.com/).
 
@@ -149,6 +147,7 @@ fn handle_stream(mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
 Where the keep_alive field in `HttpRequest` is set parsing the request headers. The default HTTP/1.1 behavior is keeping the TCP connection alive. Only if a [`Connection: close` header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection#syntax) is found will the server close the connection right after responding.
 
 Small utility implemented on `HttpRequest` to determine if the server should close the TCP connection:
+
 ```rust
 pub fn keep_alive(&self) -> bool {
         match self.headers.get("connection") {
@@ -161,41 +160,44 @@ pub fn keep_alive(&self) -> bool {
 Next, let's look at the abstraction that allows us to "receive" and "send" data to-and-from the client to the server: **sockets**.
 
 ## "Sockets"
+
 ### Berkeley Sockets
 
-Let's explain what is a "socket". Before working on this project, I had often heard expression like "socket programming" or just the term "socket" but never understood what this was all about. 
+Let's explain what is a "socket". Before working on this project, I had often heard expression like "socket programming" or just the term "socket" but never understood what this was all about.
 
-A [network socket](https://en.wikipedia.org/wiki/Network_socket#) is an *abstract reference to a communication endpoint*. It acts as a ["handle"](https://en.wikipedia.org/wiki/Handle_(computing)) on the endpoint **providing an API for the communication** path from one end's perspective. 
+A [network socket](https://en.wikipedia.org/wiki/Network_socket#) is an _abstract reference to a communication endpoint_. It acts as a ["handle"](<https://en.wikipedia.org/wiki/Handle_(computing)>) on the endpoint **providing an API for the communication** path from one end's perspective.
 
-This means a socket can be used to perform operation on the communication endpoint - think sending/receiving data. In the Unix spirit (["everything is a file"](https://en.wikipedia.org/wiki/Everything_is_a_file)),  a socket abstracts the communication endpoint as a file descriptor although the analogy has its limits (which?). The parallels between doing file I/O and networking I/O include comparing read/write with receive/send. .
+This means a socket can be used to perform operation on the communication endpoint - think sending/receiving data. In the Unix spirit (["everything is a file"](https://en.wikipedia.org/wiki/Everything_is_a_file)), a socket abstracts the communication endpoint as a file descriptor although the analogy has its limits (which?). The parallels between doing file I/O and networking I/O include comparing read/write with receive/send. .
 
 ![flowchart illustrating the parallel between network I/O and file I/O|500](socket_file_descriptor_analogy.svg)
 note: `sd` for socket descriptor, `fd` for file descriptor
 
 A socket to do networking on the internet is defined by [three pieces of information](https://en.wikipedia.org/wiki/Network_socket#Implementation):
+
 - a local socket address: IP address + port
 - a remote socket address: IP address + port
 - a transport protocol: say TCP or UDP
 
-
 See this example of a full network socket definition:
 ![flowchart illustrating the socket triplet with examples|500](socket_triplet.svg)
-- Local socket address: here a *private* IP address from the `192.168.0.0/16` range (defined in [RFC 1918 :  "Address Allocation for Private Internets"](https://www.rfc-editor.org/rfc/rfc1918)) with the standard port for HTTP (80)
-- Remote socket address: here an IP address is from the `203.0.113.0/24` block. This block is specifically reserved for *documentation and examples* (as per [RFC 5737 : "IPv4 Address Blocks Reserved for Documentation"](https://www.rfc-editor.org/rfc/rfc5737)) + the standard port for HTTPS (443)
+
+- Local socket address: here a _private_ IP address from the `192.168.0.0/16` range (defined in [RFC 1918 : "Address Allocation for Private Internets"](https://www.rfc-editor.org/rfc/rfc1918)) with the standard port for HTTP (80)
+- Remote socket address: here an IP address is from the `203.0.113.0/24` block. This block is specifically reserved for _documentation and examples_ (as per [RFC 5737 : "IPv4 Address Blocks Reserved for Documentation"](https://www.rfc-editor.org/rfc/rfc5737)) + the standard port for HTTPS (443)
 
 Rust abstracts these network sockets with its [`SocketAddr`](https://doc.rust-lang.org/std/net/enum.SocketAddr.html) struct.
 
-### Sockets in Rust -  `TcpStream`
+### Sockets in Rust - `TcpStream`
 
 Rust gives you high-level access to sockets with its standard library:
--   [`TcpListener`](https://dev-doc.rust-lang.org/stable/std/net/struct.TcpListener.html) represents a listening socket 
+
+- [`TcpListener`](https://dev-doc.rust-lang.org/stable/std/net/struct.TcpListener.html) represents a listening socket
 - [`TcpStream`](https://doc.rust-lang.org/std/net/struct.TcpStream.html) , represents a connected socket ready to send/receive data
 
 Rust structs and their traits/methods maps to the historical [Berkeley sockets](https://en.wikipedia.org/wiki/Berkeley_sockets) API:
 ![|400](berkeley_sockets_primitives.png)
 
-A `TcpStream` can be obtained from a `TcpListener` after  `bind`ing the listener to a particular socket-address: ip address + port number, remember the triplet.
-Then, you call `incoming` on the binded listener. This gives us an iterator over incoming TCP requests to our local ip address + port. 
+A `TcpStream` can be obtained from a `TcpListener` after `bind`ing the listener to a particular socket-address: ip address + port number, remember the triplet.
+Then, you call `incoming` on the binded listener. This gives us an iterator over incoming TCP requests to our local ip address + port.
 
 ```rust
 let listener = TcpListener::bind(&local_socket_addr)?;
@@ -211,25 +213,27 @@ for tcp_stream in listener.incoming() {
 
 `TcpStream` implements the [`Read`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#impl-Read-for-TcpStream) and [`Write`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#impl-Write-for-TcpStream) traits. This means we can read/write bytes directly from/to an instance of a `TcpStream` using the methods provided by these trait.
 
-However, these methods are the basics of I/O operations. Critically, they are *not* buffered: see [`Read` vs `BufRead`](### `Read` vs `BufRead`)
+However, these methods are the basics of I/O operations. Critically, they are _not_ buffered: see [`Read` vs `BufRead`](### `Read` vs `BufRead`)
 
 ### Difficulty: No EOF marker in headers
 
-The first problem I ran into trying to read and parse HTTP request is that they do *not* have EOF (end of file) markers ! My first naive approach, i.e. [`read_until_end`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read_to_end) did not work. Never ended !
+The first problem I ran into trying to read and parse HTTP request is that they do _not_ have EOF (end of file) markers ! My first naive approach, i.e. [`read_until_end`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read_to_end) did not work. Never ended !
 
 I had to read line by line, FSM-style. No need for a real FSM as the reading steps are always the same, the chain of reads is fixed: request-line, then http method, then optional headers and finally optional body.
 
 This strategy turns into a sequence of `read_line` and `read_exact` leveraging a `BufRead`er.
 
 However, these many sequential small reads would be very inefficent if done through the basic `Read` trait. We would fire one system call per read!
-So this strategy turns into a sequence of `read_line` and `read_exact` - same methods - but leveraging a `BufRead`er. More on that in the  [`Read` vs `BufRead`](### `Read` vs `BufRead`) section.
+So this strategy turns into a sequence of `read_line` and `read_exact` - same methods - but leveraging a `BufRead`er. More on that in the [`Read` vs `BufRead`](### `Read` vs `BufRead`) section.
 
 Initialising the buffered reader:
+
 ```rust
 let mut reader = BufReader::new(stream);
 ```
 
 Example parsing the request line:
+
 ```rust
 // Read the *request-line*
 let mut request_line = String::new();
@@ -250,39 +254,42 @@ let protocol_version = protocol_version.parse::<HttpVersion>()?;
 
 #### I/O in Rust - Read bs BufRead
 
-I/O operations in Rust have felt very different than I what experienced in other *higher-level* language like Python. Rust does not hide the *many* different ways in which you can carry read/write operations. 
+I/O operations in Rust have felt very different than I what experienced in other _higher-level_ language like Python. Rust does not hide the _many_ different ways in which you can carry read/write operations.
 
 ---
 
 For example, I got to wrap my head around the `Read` and `BufRead` traits. This distinction exposes very interesting trade-offs which I was completely unaware of using higher-level languages in the past.
 
 When you read from a source - in our case incoming bytes from the network - you can choose to:
-- "greedily" read new bytes whenever they become available - potentially one-by-one. This corresponds to the fundamental `Read` trait, the most basic trait for reading bytes from a source. 
+
+- "greedily" read new bytes whenever they become available - potentially one-by-one. This corresponds to the fundamental `Read` trait, the most basic trait for reading bytes from a source.
 - wait a bit to read a larger chunk of data all at once and store it in memory, i.e. in a data buffer - that's `BufRead`.
 
-The `Read` vs `BufRead` distinction matters because every reads using the `Read` trait translate to a system call to the operaint system. However [systems calls](https://en.wikipedia.org/wiki/System_call) **[are not cheap](https://youtu.be/H4SDPLiUnv4?si=nADWiYifdC7Efuwt)**. 
-That's why the intermediate  [buffer](https://en.wikipedia.org/wiki/Data_buffer) leveraged by the `BufRead` trait is so powerful. Once the buffer has been filled, subsequent read calls will read from it instead of reading from the source. This indirection allows to make rapid, small read calls from memory (fast) by by-passing the need to make lots of system calls (slow).
+The `Read` vs `BufRead` distinction matters because every reads using the `Read` trait translate to a system call to the operaint system. However [systems calls](https://en.wikipedia.org/wiki/System_call) **[are not cheap](https://youtu.be/H4SDPLiUnv4?si=nADWiYifdC7Efuwt)**.
+That's why the intermediate [buffer](https://en.wikipedia.org/wiki/Data_buffer) leveraged by the `BufRead` trait is so powerful. Once the buffer has been filled, subsequent read calls will read from it instead of reading from the source. This indirection allows to make rapid, small read calls from memory (fast) by by-passing the need to make lots of system calls (slow).
 
 Depending on the access pattern, one trait may be far better than the other performance-wise:
+
 - if you plan to read once or read exactly n bytes: `Read` is perfect
 - if you plan to read multiple times from the same source, typically one line at a time, `BufRead` is perfect. The buffer overhead is well-worth it as you pay for fewer "true" reads - built upon system calls. Instead you read from memory which is faster.
 
 The Rust doc for [`BufRead<R>` struct](https://doc.rust-lang.org/std/io/struct.BufReader.html) summarizes this clearly:
+
 > The `BufReader<R>` struct adds buffering to any reader.
 >
-> It can be excessively inefficient to work directly with a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html "trait std::io::Read") instance. For example, every call to [`read`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read "method std::net::TcpStream::read") on [`TcpStream`](https://doc.ru∏st-lang.org/std/net/struct.TcpStream.html "struct std::net::TcpStream") results in a system call. A `BufReader<R>` performs large, infrequent reads on the underlying [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html "trait std::io::Read") and maintains an in-memory buffer of the results.
-> 
-> `BufReader<R>` can improve the speed of programs that make _small_ and _repeated_ read calls to the same file or network socket. It does not help when reading very large amounts at once, or reading just one or a few times. It also provides no advantage when reading from a source that is already in memory, like a `[Vec](https://doc.rust-lang.org/std/vec/struct.Vec.html "struct std::vec::Vec")<u8>`.
+> It can be excessively inefficient to work directly with a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html 'trait std::io::Read') instance. For example, every call to [`read`](https://doc.rust-lang.org/std/net/struct.TcpStream.html#method.read 'method std::net::TcpStream::read') on [`TcpStream`](https://doc.ru∏st-lang.org/std/net/struct.TcpStream.html 'struct std::net::TcpStream') results in a system call. A `BufReader<R>` performs large, infrequent reads on the underlying [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html 'trait std::io::Read') and maintains an in-memory buffer of the results.
+>
+> `BufReader<R>` can improve the speed of programs that make *small* and *repeated* read calls to the same file or network socket. It does not help when reading very large amounts at once, or reading just one or a few times. It also provides no advantage when reading from a source that is already in memory, like a `[Vec](https://doc.rust-lang.org/std/vec/struct.Vec.html "struct std::vec::Vec")<u8>`.
 
 #### Toy Benchmark
 
-I spun up a quick benchmark - I admit courtesy of my favourite LLM - to measure the difference between looping over plain  reads and looping over buffered reads over a big text file.
+I spun up a quick benchmark - I admit courtesy of my favourite LLM - to measure the difference between looping over plain reads and looping over buffered reads over a big text file.
 
 Benchmarks with `hyperfine`. On Debug and Release builds, `BufRead` method was respectively **4.95x and 23.6x faster** than `Read` method:
 
 ![[read_normal_vs_buf_bench_debug_and_release.png|500]]
 
-####  Practical Examples from my HTTP Server 
+#### Practical Examples from my HTTP Server
 
 Example reading the body. In this case, the reader is already a buffered reader as we first read line by line the incoming payload. But when it comes to the body, we know its length in bytes. So we only have to read once: `read_exact` is perfect as we know how much bytes we want.
 
@@ -302,7 +309,7 @@ if let Some(n_bytes_str) = headers.get("content-length") {
 };
 ```
 
-But when parsing headers, I use one *read* call for every single header. A buffered read is way more efficient in this case:
+But when parsing headers, I use one _read_ call for every single header. A buffered read is way more efficient in this case:
 
 ```rust
 // Read eventual *headers*
@@ -408,20 +415,21 @@ match HttpRequest::build_from_stream(&mut stream) {
 ```
 
 --> I wrote 2 function that both create a new http-response without failing:
+
 - `new_from_request`
 - `new_from_bad_request`
 
-And if  `new_from_request` was to "fail" internally, for instance somewhere in the internals of some endpoint, then a fallback to an http-response similar to what `new_from_bad_request` outputs is actually returned.
+And if `new_from_request` was to "fail" internally, for instance somewhere in the internals of some endpoint, then a fallback to an http-response similar to what `new_from_bad_request` outputs is actually returned.
 
 - I also used the builder pattern for the `HttpRequest` struct as well as my `Config` struct I build from the combination of CLI args, a toml config file and potential env. variables.
 
 ### Error handling - levels of maturity
 
 - [Error Handling in Rust](https://burntsushi.net/rust-error-handling/) from Andrew Gallent, absolute gem. Guided me to enhance the error handling going up the levels of maturity.
-- I also liked watching  [Logan Smith's video - A Simpler Way to See Results](https://www.youtube.com/watch?v=s5S2Ed5T-dc&t=1004s) and  [Tim McNamara - 4 levels of error handling](https://www.youtube.com/@rustnationuk) on Rust Nation UK.
+- I also liked watching [Logan Smith's video - A Simpler Way to See Results](https://www.youtube.com/watch?v=s5S2Ed5T-dc&t=1004s) and [Tim McNamara - 4 levels of error handling](https://www.youtube.com/@rustnationuk) on Rust Nation UK.
 
-0. absolute basics just because Rust *forces* you to do something about errors : `unwrap`s, or better `expect`s
-Here the difference between a personal project, a simple binary, vs a professional / used-by-others librairy is big. The former can reasonably stops here, while the later must go way further up the error-hanling maturity scale. 
+0. absolute basics just because Rust _forces_ you to do something about errors : `unwrap`s, or better `expect`s
+   Here the difference between a personal project, a simple binary, vs a professional / used-by-others librairy is big. The former can reasonably stops here, while the later must go way further up the error-hanling maturity scale.
 
 1. Start using `Result<T, E>`, starting with the opaque `Result<T, String>`
 2. Moving to the general `Result<T, Box<dyn Error>>`
@@ -521,7 +529,8 @@ impl Display for HttpResponse {
 
 However, the intermediary string is not needed as one can directly work with a writer implementing the `Write` trait, which was I was actually exactly what I was looking for.
 
-Example implementing `write_to` taking in a writer for my `HttpResponse`: 
+Example implementing `write_to` taking in a writer for my `HttpResponse`:
+
 ```rust
 impl HttpResponse {
     pub fn write_to<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
@@ -538,7 +547,7 @@ impl HttpResponse {
 
 Notice how it looks very similar to the implementation of for Display!
 
-With the first approch, going `HttpResponse` --> utf-8 string through `Display` --> bytes, I ran into lots of problems, especially related to the hexadecimal representation, with new utf-8 characters being inserted vs although I just wanted to *write* the exact raw bytes to the tcp stream. This got me falling into the string, UTF-8, bytes rabbit hole, but I stopped before going too far down this one (for now!).
+With the first approch, going `HttpResponse` --> utf-8 string through `Display` --> bytes, I ran into lots of problems, especially related to the hexadecimal representation, with new utf-8 characters being inserted vs although I just wanted to _write_ the exact raw bytes to the tcp stream. This got me falling into the string, UTF-8, bytes rabbit hole, but I stopped before going too far down this one (for now!).
 
 Also, relying on the `Display` trait really came to bite me when implementing gzip-compression feature, which is when I had to stop and rethink the strategy, ultimatly going the `write_to` route.
 
@@ -573,16 +582,17 @@ type Job = Box<dyn FnOnce() + Send + 'static>;
 
 It organizes threads into a `Vec<Worker>`. The number of workers is fixed at the beginning. We don't want this number to skyrocket unbounded as the server receives more and more requests at once. Instead, new tasks (like handling a new TCP stream) are queued by the `ThreadPool` and available workers pick them up to execute them.
 
-But how are tasks 'sent' from the `ThreadPool` (on the main thread) to the workers (on other threads) ? 
+But how are tasks 'sent' from the `ThreadPool` (on the main thread) to the workers (on other threads) ?
 
 The key to this inter-thread communication is the intermediate queue implemented using message-passing via [channels](https://doc.rust-lang.org/stable/book/ch16-02-message-passing.html):
+
 - The `ThreadPool` owns the `Sender`, while every worker is given a shared (`Arc`) clone of the `receiver`.
 - Then, worker enter a loop where they listen for a new tasks put on the communication channel (acting as the queue), execute it, and get back to listening.
 
-The type used to describe a 'task' here is `Job`, an alias for the *trait object*: `Box<dyn FnOnce() + Send + 'static>`.
+The type used to describe a 'task' here is `Job`, an alias for the _trait object_: `Box<dyn FnOnce() + Send + 'static>`.
+
 - The `Box` makes it a (smart) pointer to a block of memory allocated on the heap. What it points to is a `dyn` type meaning it's size will only be known at runtime, it's dynamic. However the pointer size can always be known at compile-time, it's fixed whatever the size of the underlying object stored on the heap. The only thing we know at at compile time about this object is its trait bound: it will be `FnOnce() + Send + 'static`.
 - The trait bound `FnOnce() + Send + 'static` corresponds: to a function (or closure in our case!) you can call once (as it may consume variables), that is `Send` meaning safe to pass between threads and `static` meaning references to this object can live as long as the program (lifetime is the lifetime of the program itself). This corresponds to a closure in our program that we want a thread to execute.
-
 
 In practice, each incoming connection is wrapped in a closure and sent to the thread pool for execution:
 
@@ -594,7 +604,7 @@ for stream in listener.incoming() {
 	    pool.execute(move || {
 		match Self::handle_stream(stream) {
 		    Ok(()) => println!("Successfully handled stream"),
-		    Err(e) => eprintln!("Error handling the stream: {e}"), 
+		    Err(e) => eprintln!("Error handling the stream: {e}"),
 		};
 	    });
 	}
@@ -629,7 +639,7 @@ impl Drop for ThreadPool {
 
 A very exciting next step will be to add some async flavour to this implementation to really push performance up.
 
-###  Static vs Dynamic Dispatch
+### Static vs Dynamic Dispatch
 
 #### Enum Approach
 
@@ -664,7 +674,7 @@ match self {
 
 #### Trait Approach
 
-However there is an alternative design! One can use *trait objects*. Instead of a centralized match, you define something like a `RequestHandler` trait:
+However there is an alternative design! One can use _trait objects_. Instead of a centralized match, you define something like a `RequestHandler` trait:
 
 ```rust
 trait RequestHandler {
@@ -683,17 +693,16 @@ impl RequestHandler for EchoHandler {
 }
 ```
 
-Now, instead of matching, you just call `handler.handle(&request)` - the correct method is chosen at *runtime* via *dynamic dispatch* (using a v-table internally).
+Now, instead of matching, you just call `handler.handle(&request)` - the correct method is chosen at _runtime_ via _dynamic dispatch_ (using a v-table internally).
 
 **Trade-Offs**
 
-|Enum-based (Static Dispatch)|Trait-based (Dynamic Dispatch)|
-|---|---|
-|Fast (compile-time dispatch)|Slightly slower (runtime lookup)|
-|Centralized logic via `match`|Decentralized via trait impls|
-|Harder to extend without editing internals|Easy to extend without modifying core logic|
-|Great for small, known sets|Great for plugin-style extensibility|
-
+| Enum-based (Static Dispatch)               | Trait-based (Dynamic Dispatch)              |
+| ------------------------------------------ | ------------------------------------------- |
+| Fast (compile-time dispatch)               | Slightly slower (runtime lookup)            |
+| Centralized logic via `match`              | Decentralized via trait impls               |
+| Harder to extend without editing internals | Easy to extend without modifying core logic |
+| Great for small, known sets                | Great for plugin-style extensibility        |
 
 **When to use which ?**
 The enum-based approach works well for **small-scale**, **tightly scoped** projects where you control all endpoints. But as the number of endpoints grows—or if you want to let users **extend the server as a library**—the trait-based approach scales much better.
@@ -703,11 +712,11 @@ With traits, adding a new endpoint just means implementing the `RequestHandler` 
 > Think of the enum version as a monolith. The trait version is more like a plugin system.
 
 Notes:
+
 - In the trait approach, you’d typically have some routing logic that maps the request path to a `Box<dyn RequestHandler>`.
 - You can combine both approaches: enums for internal core endpoints, traits for user-extensible ones
 
 ## Next Steps
-
 
 - go async
 - move to using an error-handling crate like thiserror or anyhow

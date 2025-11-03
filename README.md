@@ -2,7 +2,6 @@ My personal [blog](https://nicolaspllr1.github.io/)
 
 ## Commands
 
-
 Compiling tailwind --> css:
 
 ```sh

@@ -37,9 +37,9 @@
   --color-link-visited: var(--link-visited);
 }
 
- [data-theme=tokyo-night] {
+[data-theme='tokyo-night'] {
   /* Text neutrals */
-  --neutral-50:  #c0caf5;
+  --neutral-50: #c0caf5;
   --neutral-100: #a9b1d6;
   --neutral-200: #9aa5ce;
 
@@ -70,56 +70,53 @@
 
   /* Links */
   --link-primary: #7dcfff;
-  --link-hover: 2ac3de ;
+  --link-hover: 2ac3de;
   --link-visited: #bb9af7;
-  }
-
+}
 
 /* https://tailwindcss.com/docs/adding-custom-styles#adding-component-classes */
 @layer components {
-
   body {
-    font-family: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   }
 
   h1 {
-      @apply text-3xl text-accent-h1 mb-4
+    @apply text-3xl text-accent-h1 mb-4;
   }
   h2 {
-      @apply text-2xl text-accent-h2 mb-4 pt-4
+    @apply text-2xl text-accent-h2 mb-4 pt-4;
   }
   h3 {
-      @apply text-xl text-accent-h3 mb-4 
+    @apply text-xl text-accent-h3 mb-4;
   }
   h4 {
-      @apply text-lg text-accent-h4 mb-4 
+    @apply text-lg text-accent-h4 mb-4;
   }
-
 
   /* not yet working. Look into tailwind layers */
   .blog-post .post-hero h3,
   .blog-post .post-hero p {
-    @apply mb-2; 
+    @apply mb-2;
   }
 
   .first-h2 {
-    @apply text-2xl text-accent-h2 mb-4 pt-0
+    @apply text-2xl text-accent-h2 mb-4 pt-0;
   }
 
   .blog-post p {
-      @apply text-lg mb-6
+    @apply text-lg mb-6;
   }
 
   .blog-post ol {
-    @apply text-lg ml-4 list-decimal mb-4
+    @apply text-lg ml-4 list-decimal mb-4;
   }
 
   .blog-post ul {
-    @apply text-lg ml-4 list-disc mb-4
+    @apply text-lg ml-4 list-disc mb-4;
   }
 
   .blog-post a {
-    color: var(--link-primary)
+    color: var(--link-primary);
   }
   .blog-post a:visited {
     color: var(--link-visited);
@@ -148,8 +145,6 @@
   }
 
   .blog-post figure {
-    @apply mb-4 text-base
+    @apply mb-4 text-base;
   }
-
 }
-
