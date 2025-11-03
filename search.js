@@ -13,7 +13,7 @@ const searchableContent = [
     url: 'posts/networks-intro/post.html',
   },
   {
-    title: 'mini http/1.1 server (in rust)',
+    title: 'Mini http/1.1 server (in rust)',
     content: 'http, tcp, server, rust, programming, codecrafters, projects',
     url: 'posts/http-server-rust/post.html',
   },
