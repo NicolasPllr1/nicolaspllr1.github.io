@@ -147,4 +147,31 @@
   .blog-post figure {
     @apply mb-4 text-base;
   }
+
+  .blog-post table {
+    @apply m-4;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .blog-post thead th {
+    color: #c0caf5;
+    padding: 12px 16px;
+    border-bottom: 2px solid #414868;
+  }
+
+  .blog-post tbody tr {
+    transition: background 0.2s ease;
+  }
+
+  .blog-post tbody tr:hover {
+    background-color: #2a2e45;
+  }
+
+  .blog-post td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #2e3250;
+    vertical-align: top;
+  }
 }
