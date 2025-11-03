@@ -17,6 +17,11 @@ const searchableContent = [
     content: 'http, tcp, server, rust, programming, codecrafters, projects',
     url: 'posts/http-server-rust/post.html',
   },
+  {
+    title: 'Python type hints and complex Pydantic rebuilds',
+    content: 'python, types, type hints, pep, pydantic, models, rebuild, init, __init__, forward references, future statement, circular imports',
+    url: 'posts/python-type-hints-and-pydantic-rebuilds/post.html',
+  },
 ]
 
 const searchModal = document.getElementById('search-modal')
