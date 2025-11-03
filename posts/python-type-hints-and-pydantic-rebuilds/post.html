@@ -453,83 +453,79 @@
         - superseding the use of the future import introduced in PEP 563.
       </p>
       <h2>Typing PEPs summary</h2>
-      <blockquote>
-        <p>
-          [!info] Key PEPs progressively introducing python modern type system
-        </p>
+      <p>Key PEPs progressively introducing python modern type system:</p>
 
-        <table>
-          <thead>
-            <tr>
-              <th>PEP</th>
-              <th>PEP title</th>
-              <th>Accepted in Python</th>
-              <th>Release year</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><a href="https://peps.python.org/pep-3107/">3107</a></td>
-              <td>Function Annotations</td>
-              <td>3.0</td>
-              <td>2008</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0484/">484</a></td>
-              <td>Type Hints</td>
-              <td>3.5</td>
-              <td>2015</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0526/">526</a></td>
-              <td>Syntax for Variable Annotations</td>
-              <td>3.6</td>
-              <td>2016</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0563">563</a></td>
-              <td>Postponed Evaluation of Annotations</td>
-              <td>3.7 (deferred)</td>
-              <td>2018</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0585/">585</a></td>
-              <td>Type Hinting Generics In Standard Collections</td>
-              <td>3.9</td>
-              <td>2020</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0604">604</a></td>
-              <td>
-                Allow writing union types as
-                <span data-rehype-pretty-code-figure=""
-                  ><code data-language="python" data-theme="tokyo-night"
-                    ><span data-line=""
-                      ><span style="color: #a9b1d6">X </span
-                      ><span style="color: #bb9af7">|</span
-                      ><span style="color: #a9b1d6"> Y</span></span
-                    ></code
-                  ></span
-                >
-              </td>
-              <td>3.10</td>
-              <td>2021</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0649/">649</a></td>
-              <td>Deferred Evaluation of Annotations Using Descriptors</td>
-              <td>3.14 (replaced 563)</td>
-              <td>2025</td>
-            </tr>
-            <tr>
-              <td><a href="https://peps.python.org/pep-0749/">749</a></td>
-              <td>Implementing PEP 649</td>
-              <td>3.14 (replaced 563)</td>
-              <td>2025</td>
-            </tr>
-          </tbody>
-        </table>
-      </blockquote>
+      <table>
+        <thead>
+          <tr>
+            <th>PEP</th>
+            <th>PEP title</th>
+            <th>Accepted in Python</th>
+            <th>Release year</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://peps.python.org/pep-3107/">3107</a></td>
+            <td>Function Annotations</td>
+            <td>3.0</td>
+            <td>2008</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0484/">484</a></td>
+            <td>Type Hints</td>
+            <td>3.5</td>
+            <td>2015</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0526/">526</a></td>
+            <td>Syntax for Variable Annotations</td>
+            <td>3.6</td>
+            <td>2016</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0563">563</a></td>
+            <td>Postponed Evaluation of Annotations</td>
+            <td>3.7 (deferred)</td>
+            <td>2018</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0585/">585</a></td>
+            <td>Type Hinting Generics In Standard Collections</td>
+            <td>3.9</td>
+            <td>2020</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0604">604</a></td>
+            <td>
+              Allow writing union types as
+              <span data-rehype-pretty-code-figure=""
+                ><code data-language="python" data-theme="tokyo-night"
+                  ><span data-line=""
+                    ><span style="color: #a9b1d6">X </span
+                    ><span style="color: #bb9af7">|</span
+                    ><span style="color: #a9b1d6"> Y</span></span
+                  ></code
+                ></span
+              >
+            </td>
+            <td>3.10</td>
+            <td>2021</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0649/">649</a></td>
+            <td>Deferred Evaluation of Annotations Using Descriptors</td>
+            <td>3.14 (replaced 563)</td>
+            <td>2025</td>
+          </tr>
+          <tr>
+            <td><a href="https://peps.python.org/pep-0749/">749</a></td>
+            <td>Implementing PEP 649</td>
+            <td>3.14 (replaced 563)</td>
+            <td>2025</td>
+          </tr>
+        </tbody>
+      </table>
       <h1>Types at Runtime - Enter Pydantic</h1>
       <h2>Typed data structures - NamedTuple, TypedDict and Dataclass</h2>
       <p>
@@ -1529,14 +1525,12 @@
         files finalize model definition and re-export them so that consumer code
         always get correctly built models.
       </p>
-      <blockquote>
-        <p>[!example]- Centralized init file</p>
-        <figure data-rehype-pretty-code-figure="">
-          <pre
-            tabindex="0"
-            data-language="python"
-            data-theme="tokyo-night"
-          ><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># In __init__.py</span></span>
+      <figure data-rehype-pretty-code-figure="">
+        <pre
+          tabindex="0"
+          data-language="python"
+          data-theme="tokyo-night"
+        ><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># In __init__.py</span></span>
 <span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">a </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelA</span></span>
 <span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">b </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelB</span></span>
 <span data-line=""> </span>
@@ -1551,8 +1545,7 @@
 <span data-line=""><span style="color:#51597D;font-style:italic"># ModelB.model_json_schema()</span></span>
 <span data-line=""> </span>
 <span data-line=""><span style="color:#C0CAF5">__all__</span><span style="color:#89DDFF"> =</span><span style="color:#89DDFF"> [</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">ModelA</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">ModelB</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">]</span><span style="color:#51597D;font-style:italic">  # not necessary but this exposes the models cleanly</span></span></code></pre>
-        </figure>
-      </blockquote>
+      </figure>
       <p>
         Starting in python 3.14 implementing PEP 649/749, the future import is
         not needed. The conditional import will still be needed to avoid
