@@ -128,7 +128,7 @@
         </li>
       </ol>
 
-      <p>Wikipedia provides a nice colorful vizualisation of PDU encapsulation as it goes down the protocol stack:</p>
+      <p>Wikipedia provides a nice colorful visualisation of PDU encapsulation as it goes down the protocol stack:</p>
 
       <div class="grid grid-cols-1 justify-items-center my-4">
         <div><img src="./assets/wikipedia_encapsulation_with_colors.png" width="500"/></div> 
@@ -256,7 +256,7 @@
       <hr>
 
       <p class="mt-4">However, IP does not add any additional features of robustness/reliability: packets may be duplicated or received out of order, if they are received at all: connectionless, <em>datagrams</em>. Packets may also be fragmented into smaller packets, further complicating the delivery.
-        IP is even stateless: packets are dealt with independantly of each other. There is no memory of previous packets or information about future ones. This stands in stark contrast to what the next layer does when using TCP.</p>
+        IP is even stateless: packets are dealt with independently of each other. There is no memory of previous packets or information about future ones. This stands in stark contrast to what the next layer does when using TCP.</p>
 
       <blockquote class="border border-highlight">
         <p class="error">> IP address, inter-network, routing, connectionless, stateless, datagrams, packets</p>
@@ -376,7 +376,7 @@
 
       <p>These requests travels over TCP/IP. IP handles addressing across networks; TCP ensures reliable delivery. Lower layers like Ethernet handle local transfers, using MAC addresses. Auxiliary protocols are often involved - for instance to "discover" the IP-to-MAC address mappings (e.g. ARP).</p>
 
-      <p>In this sense, TCP and IP from the fundation of the internet, on top of which HTTP - an "app" relative to the network - can run.</p>
+      <p>In this sense, TCP and IP from the foundation of the internet, on top of which HTTP - an "app" relative to the network - can run.</p>
 
       <p>See the protocol stack involved for the client/server communication, with routers in between:</p>
 
@@ -388,7 +388,7 @@
       <p>Data flows down the stack on the one machine, is sent physically, and then flows up the stack on the next machine. This happens multiple times until the message arrives at its final destination (the server).
         In between the client and the server, a number of intermediary machines like routers will relay the messages forward closer to destination. These intermediate nodes need only read and (re)write only relevant lower-layer headers to forward messages.</p>
 
-      <p>During communication, every layer assumes the existance of its "peer" on the destination machine. This "peer" is another instance of the layer, simply running on another computer. Both should therefore "speak" the same protocol.
+      <p>During communication, every layer assumes the existence of its "peer" on the destination machine. This "peer" is another instance of the layer, simply running on another computer. Both should therefore "speak" the same protocol.
         Layers can safely add additional information to messages by encapsulating them with headers (and sometimes trailers) - trusting that the peer layer will correctly decode the new header/trailer and process them properly, as specified by their protocol.</p>
       <p>Once a layer completes its task, it typically passes control or returns the results back up to the layer above it, which originally requested its services</p>
 
