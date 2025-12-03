@@ -1,3 +1,4 @@
+import sys
 import re
 
 from bs4 import BeautifulSoup
@@ -59,6 +60,5 @@ def add_ids_to_headings(input_filepath, output_filepath):
 
 
 if __name__ == "__main__":
-    input_html_file = "posts/python-type-hints-and-pydantic-rebuilds/index.html"
-    output_html_file = "posts/python-type-hints-and-pydantic-rebuilds/index-slug.html"
-    add_ids_to_headings(input_html_file, output_html_file)
+    file_path = str(sys.argv[1])
+    add_ids_to_headings(file_path, file_path)
