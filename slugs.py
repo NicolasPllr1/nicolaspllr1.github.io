@@ -1,6 +1,6 @@
 import re
+
 from bs4 import BeautifulSoup
-import re
 
 
 def generate_slug(text):
