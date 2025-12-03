@@ -1,0 +1,5 @@
+{
+  "1": {"link": "./posts/idx1.html#hello-world", "title": "Hello world"},
+  "2": {"link": "./posts/idx3.html#lorem-ipsum-2", "title": "Lorem ipsum 2"},
+  "3": {"link": "./posts/idx2.html#lorem-ipsum", "title": "Lorem ipsum"}
+}
