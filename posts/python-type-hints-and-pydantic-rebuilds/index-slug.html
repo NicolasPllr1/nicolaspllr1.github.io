@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html data-theme="tokyo-night">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <link href="/output.css" rel="stylesheet"/>
+ </head>
+ <body class="flex flex-col max-w-3xl mx-auto h-screen text-neutral-50 bg-bg-base">
+  <header class="py-10">
+   <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-bg-subtle">
+    <ul class="flex space-x-4 items-center">
+     <li class="hover:text-neutral-200 transition duration-100 ease">
+      <a href="/">
+       home
+      </a>
+     </li>
+     <li class="hover:text-neutral-200 transition duration-100 ease">
+      <a href="/blog.html">
+       writes
+      </a>
+     </li>
+     <li class="hover:text-neutral-200 transition duration-100 ease">
+      <a href="/reading_list.html">
+       reads
+      </a>
+     </li>
+    </ul>
+    <p class="info hover:text-neutral-200 hover:text-neutral-200 transition duration-100 ease">
+     cmd+k
+    </p>
+   </nav>
+  </header>
+  <main class="flex-grow justify-between blog-post">
+   <h1 id="static-typing-in-python">
+    Static typing in Python
+   </h1>
+   <div class="flex justify-between post-hero">
+    <h3 id="november-2025">
+     November 2025
+    </h3>
+    <p class="warning px-4">
+     ~3k words
+    </p>
+   </div>
+   <hr/>
+   <h2 id="python-is-gradually-typed">
+    Python is gradually typed
+   </h2>
+   <p>
+    Python is fundamentally a
+    <em>
+     dynamically
+    </em>
+    typed language and
+    <a href="https://peps.python.org/pep-0484/#non-goals">
+     this
+    </a>
+    <a href="https://peps.python.org/pep-0526/#non-goals">
+     won't
+    </a>
+    <a href="https://peps.python.org/pep-0563/#non-goals">
+     change
+    </a>
+    .
+   </p>
+   <p>
+    However, Python has had
+    <em>
+     static
+    </em>
+    types since
+    <a href="https://peps.python.org/pep-0484/">
+     2015
+    </a>
+    ! Modern Python
+        leverages explicit
+    <a href="https://docs.python.org/3/glossary.html#term-type-hint">
+     type
+    </a>
+    <a href="https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html">
+     hints
+    </a>
+    (~annotations) combined with static [type](
+    <a href="https://docs.python.org/3/glossary.html#term-static-type">
+     https://docs.python.org/3/glossary.html#term-static-type
+    </a>
+    checker)-
+    <a href="https://en.wikipedia.org/wiki/Type_system#Static_type_checking">
+     checkers
+    </a>
+    to enforce safety.
+   </p>
+   <p>
+    So while Python remains dynamic, Python programs can now be
+    <a href="https://jsiek.github.io/home/WhatIsGradualTyping.html">
+     gradually typed
+    </a>
+    . Meaning as the programmer, you can choose to annotate
+    <em>
+     parts
+    </em>
+    of your code and use external tooling to check type
+        safety. The result is a single program mixing dynamically typed code
+        with statically type-checked code, depending on where you add your
+        annotations. You benefit from both worlds without having to use two
+        separate languages - one dynamically typed, the other statically typed.
+        However at runtime, Python's dynamic nature prevails.
+   </p>
+   <h2 id="typing-peps">
+    Typing PEPs
+   </h2>
+   <p>
+    Python's
+    <a href="https://peps.python.org/pep-0483/">
+     type system
+    </a>
+    has
+        a history which can be understood by reading through the relevant PEPs
+        which build upon one another:
+   </p>
+   <img src="./assets/PEPs_type_hints_timeline.png"/>
+   <p>
+    PEP 3107 standardised the way to annotate a function's parameters and
+        return value while PEP 484 officialised the main use-case for these
+        function annotations: "
+    <strong>
+     type hints
+    </strong>
+    ". Next, PEP 526
+        extended the use of such type hints to all variables - not just for
+        function parameters and return value anymore.
+   </p>
+   <p>
+    It is these type hints that makes Python gradually-typed. The programmer
+        can explicitly delineate which part of the program can be statically
+        analyzed and which part will escape such analysis.
+   </p>
+   <p>
+    The typed parts of your program benefit from known pros such as better
+        LSP completions, better self-documented code, and most importantly
+        catching type errors before runtime using a
+    <a href="https://typing.python.org/en/latest/#type-checkers">
+     type checker
+    </a>
+    . In 2025, you can choose from:
+   </p>
+   <ul>
+    <li>
+     <a href="https://www.mypy-lang.org/">
+      mypy
+     </a>
+     , the OG type checker
+          (2012), followed by
+     <a href="https://microsoft.github.io/pyright/#/">
+      pyright
+     </a>
+     (
+     <a href="https://github.com/microsoft/pyright/commit/60c76da87d85a24d4b06009eae224d0363349f44">
+      2019
+     </a>
+     )
+    </li>
+    <li>
+     the newcomers, more modern, faster, and often implemented in Rust for
+          some reason:
+     <ul>
+      <li>
+       <a href="https://pyrefly.org/">
+        pyrefly
+       </a>
+       by Meta (
+       <a href="https://pyrefly.org/blog/introducing-pyrefly/">
+        2025
+       </a>
+       ) (successor to Pyre)
+      </li>
+      <li>
+       <a href="https://docs.astral.sh/ty/">
+        ty
+       </a>
+       by Astral (
+       <a href="https://github.com/astral-sh/ty/commit/3d95351404ed9b5f350ba6c49a167722658f3954">
+        2025
+       </a>
+       )
+      </li>
+      <li>
+       <a href="https://zubanls.com/">
+        zuban
+       </a>
+       (
+       <a href="https://zubanls.com/blog/release/">
+        2025
+       </a>
+       )
+      </li>
+     </ul>
+    </li>
+   </ul>
+   <h2 id="forward-references">
+    Forward references
+   </h2>
+   <p>
+    Type hints are useful but they introduce a new problem:
+    <em>
+     undefined
+    </em>
+    type hints at run time!
+   </p>
+   <p>
+    For example when defining container-like types, you would want to write
+        something like this:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Tree</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#0DB9D7"> __init__</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> left</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> Tree</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> right</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> Tree</span><span style="color:#9ABDF5">):</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">left </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> left</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">right </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> right</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#7AA2F7"> leaves</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#9ABDF5">)</span><span style="color:#89DDFF"> -&gt;</span><span style="color:#A9B1D6"> list</span><span style="color:#9ABDF5">[</span><span style="color:#A9B1D6">Tree</span><span style="color:#9ABDF5">]:</span><span style="color:#E0AF68"> ...</span></span></code></pre>
+   </figure>
+   <p>
+    This does not work as
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        Tree
+       </span>
+      </span>
+     </code>
+    </span>
+    is not yet defined (
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        NameError
+       </span>
+      </span>
+     </code>
+    </span>
+    ) when we try to use it to annotate the arguments of its own
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        __init__
+       </span>
+      </span>
+     </code>
+    </span>
+    method:
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        NameError
+       </span>
+       <span style="color: #89ddff">
+        :
+       </span>
+       <span style="color: #a9b1d6">
+        name
+       </span>
+       <span style="color: #89ddff">
+        '
+       </span>
+       <span style="color: #9ece6a">
+        Tree
+       </span>
+       <span style="color: #89ddff">
+        '
+       </span>
+       <span style="color: #bb9af7">
+        is
+       </span>
+       <span style="color: #bb9af7">
+        not
+       </span>
+       <span style="color: #a9b1d6">
+        defined
+       </span>
+      </span>
+     </code>
+    </span>
+    .
+   </p>
+   <p>
+    Prior to 3.14, you would have to write this to make it work:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Tree</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#0DB9D7"> __init__</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> left</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">Tree</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> right</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">Tree</span><span style="color:#89DDFF">"</span><span style="color:#9ABDF5">):</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">left </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> left</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">right </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> right</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#7AA2F7"> leaves</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#9ABDF5">)</span><span style="color:#89DDFF"> -&gt;</span><span style="color:#A9B1D6"> list</span><span style="color:#9ABDF5">[</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">Tree</span><span style="color:#89DDFF">"</span><span style="color:#9ABDF5">]:</span><span style="color:#E0AF68"> ...</span></span></code></pre>
+   </figure>
+   <p>
+    Following PEP 484,
+    <em>
+     static
+    </em>
+    type checkers interpret the
+        'stringized' annotations as
+    <a href="https://peps.python.org/pep-0484/#forward-references">
+     forward references
+    </a>
+    - their unquoted equivalent defined later on - without
+        complaining/raising any error.
+   </p>
+   <p>
+    How is it possible that the Python interpreter raises an error while a
+        type checker is perfectly fine with the same code?
+   </p>
+   <p>
+    That's because static type checkers are, well,
+    <em>
+     static
+    </em>
+    . They
+        don't need to
+    <em>
+     run
+    </em>
+    the code. Only to analyze it. So it's not
+        necessarily a big problem if a piece of code is ill-defined from a
+        runtime perspective if it can be resolved peeking at later evaluated
+        code.
+   </p>
+   <p>
+    However, quoting type hints is cumbersome and easy to forget. To help
+        with this, PEP 563 introduced a
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #c0caf5">
+        __future__
+       </span>
+      </span>
+     </code>
+    </span>
+    import which automatically stringifies all type hints at the module
+        level:
+   </p>
+   <p>
+    (Note: this has been
+    <a href="https://peps.python.org/pep-0649/#overview">
+     superseded
+    </a>
+    by
+        PEP 649 / 749, starting in
+    <a href="https://www.python.org/downloads/release/python-3140/">
+     python 3.14
+    </a>
+    )
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#C0CAF5"> __future__</span><span style="color:#7DCFFF"> import</span><span style="color:#A9B1D6"> annotations</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Tree</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#0DB9D7"> __init__</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> left</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> Tree</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> right</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> Tree</span><span style="color:#9ABDF5">):</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">left </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> left</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">right </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> right</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#7AA2F7"> leaves</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#9ABDF5">)</span><span style="color:#89DDFF"> -&gt;</span><span style="color:#A9B1D6"> list</span><span style="color:#9ABDF5">[</span><span style="color:#A9B1D6">Tree</span><span style="color:#9ABDF5">]:</span><span style="color:#E0AF68"> ...</span></span></code></pre>
+   </figure>
+   <p>
+    This future statement is sugar for converting all type hints to their
+        'stringized' form. This implies that type hints are not evaluated right
+        away at runtime as they are turned into plain strings but rather their
+        evaluation is
+    <em>
+     postponed
+    </em>
+    until some code access the annotations
+        and explicitly evaluates it. In many cases, such evaluation will not
+        happen as the annotation is only used as a static hint. Bypassing the
+        evaluation at runtime solves most forward reference problems, and doing
+        so is automatic with the future statement: no need to manually stringify
+        any problematic type hints.
+   </p>
+   <p>
+    The distinction between runtime and 'compile'/'definition' time is key
+        here, allowing Python type system to be more expressive without changing
+        its runtime behaviour.
+   </p>
+   <p>
+    In the same PEP introducing this future statement, the
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        typing
+       </span>
+       <span style="color: #89ddff">
+        .
+       </span>
+       <span style="color: #ff9e64">
+        TYPE_CHECKING
+       </span>
+      </span>
+     </code>
+    </span>
+    constant is introduced to solve another type hints related problem:
+        circular imports.
+   </p>
+   <p>
+    In module A, you may need to import types from module B to annotate
+        module A's code although module B already depends on module A. This
+        circular imports problem is purely contingent on the need to annotate
+        the code, but it prevents the program from running due to the import
+        error at runtime!
+   </p>
+   <p>
+    To solve this, the
+    <a href="https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING">
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         typing
+        </span>
+        <span style="color: #89ddff">
+         .
+        </span>
+        <span style="color: #ff9e64">
+         TYPE_CHECKING
+        </span>
+       </span>
+      </code>
+     </span>
+    </a>
+    constant is hardcoded to
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        False
+       </span>
+      </span>
+     </code>
+    </span>
+    but interpreted as
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        True
+       </span>
+      </span>
+     </code>
+    </span>
+    by type checkers. See this simple example:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># In: utils.py</span></span>
+<span data-line=""><span style="color:#BB9AF7">if</span><span style="color:#FF9E64"> TYPE_CHECKING</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">	# Only imported for static type checking purposes</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">	# **not evaluated at runtime**</span></span>
+<span data-line=""><span style="color:#7DCFFF">	from</span><span style="color:#A9B1D6"> models </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> User</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">def</span><span style="color:#7AA2F7"> serialize</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">user</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> User</span><span style="color:#9ABDF5">)</span><span style="color:#89DDFF"> -&gt;</span><span style="color:#0DB9D7"> str</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">    return</span><span style="color:#BB9AF7"> f</span><span style="color:#9ECE6A">'</span><span style="color:#89DDFF">{{</span><span style="color:#9ECE6A">"name": "</span><span style="color:#BB9AF7">{</span><span style="color:#C0CAF5">user</span><span style="color:#89DDFF">.</span><span style="color:#C0CAF5">name</span><span style="color:#BB9AF7">}</span><span style="color:#9ECE6A">"</span><span style="color:#89DDFF">}}</span><span style="color:#9ECE6A">'</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># In: models.py</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> utils </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> serialize  </span><span style="color:#51597D;font-style:italic"># utils also imports models!</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> User</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#0DB9D7"> __init__</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> name</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> str</span><span style="color:#9ABDF5">):</span></span>
+<span data-line=""><span style="color:#F7768E">        self</span><span style="color:#89DDFF">.</span><span style="color:#A9B1D6">name </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> name</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">    def</span><span style="color:#7AA2F7"> to_json</span><span style="color:#9ABDF5">(</span><span style="color:#E0AF68">self</span><span style="color:#9ABDF5">)</span><span style="color:#89DDFF"> -&gt;</span><span style="color:#0DB9D7"> str</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#BB9AF7">        return</span><span style="color:#7AA2F7"> serialize</span><span style="color:#9ABDF5">(</span><span style="color:#F7768E">self</span><span style="color:#9ABDF5">)</span></span></code></pre>
+   </figure>
+   <p>
+    Because the
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        TYPE_CHECKING
+       </span>
+      </span>
+     </code>
+    </span>
+    is hardcoded to
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        False
+       </span>
+      </span>
+     </code>
+    </span>
+    , the import statements under the
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #bb9af7">
+        if
+       </span>
+      </span>
+     </code>
+    </span>
+    statement are never executed at runtime and circular imports issues are
+        thus avoided. On the other hand, type checkers treat these imports as
+        available for analysis as if the
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        TYPE_CHECKING
+       </span>
+      </span>
+     </code>
+    </span>
+    constant was
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        True
+       </span>
+      </span>
+     </code>
+    </span>
+    (which it's not). Generally speaking, type checkers can have a more
+        complete picture of the program compared to the interpreter at runtime
+        as they do not need to
+    <em>
+     run
+    </em>
+    the program, simply to analyze it.
+   </p>
+   <p>
+    Next, niceties were added such as being able to use standard collection
+        types such as
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        list
+       </span>
+      </span>
+     </code>
+    </span>
+    as generics, meaning you can write
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        list
+       </span>
+       <span style="color: #9abdf5">
+        [
+       </span>
+       <span style="color: #a9b1d6">
+        T
+       </span>
+       <span style="color: #9abdf5">
+        ]
+       </span>
+      </span>
+     </code>
+    </span>
+    (PEP 585) or new syntax for writing union type using the pipe symbol
+        like that
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        A
+       </span>
+       <span style="color: #bb9af7">
+        |
+       </span>
+       <span style="color: #a9b1d6">
+        B
+       </span>
+      </span>
+     </code>
+    </span>
+    (PEP 604).
+   </p>
+   <p>
+    Finally in PEP 649 (and 749) a new solution is devised for the forward
+        reference problems and handling of stringized type hints. This new
+        solution was accepted and is implemented in the new
+    <a href="https://www.python.org/downloads/release/python-3140/">
+     python 3.14
+    </a>
+    - superseding the use of the future import introduced in PEP 563.
+   </p>
+   <h2 id="typing-peps-summary">
+    Typing PEPs summary
+   </h2>
+   <p>
+    Key PEPs progressively introducing python modern type system:
+   </p>
+   <table>
+    <thead>
+     <tr>
+      <th>
+       PEP
+      </th>
+      <th>
+       PEP title
+      </th>
+      <th>
+       Accepted in Python
+      </th>
+      <th>
+       Release year
+      </th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-3107/">
+        3107
+       </a>
+      </td>
+      <td>
+       Function Annotations
+      </td>
+      <td>
+       3.0
+      </td>
+      <td>
+       2008
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0484/">
+        484
+       </a>
+      </td>
+      <td>
+       Type Hints
+      </td>
+      <td>
+       3.5
+      </td>
+      <td>
+       2015
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0526/">
+        526
+       </a>
+      </td>
+      <td>
+       Syntax for Variable Annotations
+      </td>
+      <td>
+       3.6
+      </td>
+      <td>
+       2016
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0563">
+        563
+       </a>
+      </td>
+      <td>
+       Postponed Evaluation of Annotations
+      </td>
+      <td>
+       3.7 (deferred)
+      </td>
+      <td>
+       2018
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0585/">
+        585
+       </a>
+      </td>
+      <td>
+       Type Hinting Generics In Standard Collections
+      </td>
+      <td>
+       3.9
+      </td>
+      <td>
+       2020
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0604">
+        604
+       </a>
+      </td>
+      <td>
+       Allow writing union types as
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           X
+          </span>
+          <span style="color: #bb9af7">
+           |
+          </span>
+          <span style="color: #a9b1d6">
+           Y
+          </span>
+         </span>
+        </code>
+       </span>
+      </td>
+      <td>
+       3.10
+      </td>
+      <td>
+       2021
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0649/">
+        649
+       </a>
+      </td>
+      <td>
+       Deferred Evaluation of Annotations Using Descriptors
+      </td>
+      <td>
+       3.14 (replaced 563)
+      </td>
+      <td>
+       2025
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <a href="https://peps.python.org/pep-0749/">
+        749
+       </a>
+      </td>
+      <td>
+       Implementing PEP 649
+      </td>
+      <td>
+       3.14 (replaced 563)
+      </td>
+      <td>
+       2025
+      </td>
+     </tr>
+    </tbody>
+   </table>
+   <h1 id="types-at-runtime-enter-pydantic">
+    Types at Runtime - Enter Pydantic
+   </h1>
+   <h2 id="typed-data-structures-namedtuple-typeddict-and-dataclass">
+    Typed data structures - NamedTuple, TypedDict and Dataclass
+   </h2>
+   <p>
+    Python includes several typed data structures in its standard library.
+        You have your regular
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #bb9af7">
+        class
+       </span>
+      </span>
+     </code>
+    </span>
+    , but also:
+   </p>
+   <ul>
+    <li>
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         typing
+        </span>
+        <span style="color: #89ddff">
+         .
+        </span>
+        <span style="color: #a9b1d6">
+         NamedTuple
+        </span>
+       </span>
+      </code>
+     </span>
+    </li>
+    <li>
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         dataclasses
+        </span>
+        <span style="color: #89ddff">
+         .
+        </span>
+        <span style="color: #a9b1d6">
+         dataclass
+        </span>
+       </span>
+      </code>
+     </span>
+    </li>
+    <li>
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         typing
+        </span>
+        <span style="color: #89ddff">
+         .
+        </span>
+        <span style="color: #a9b1d6">
+         TypedDict
+        </span>
+       </span>
+      </code>
+     </span>
+    </li>
+   </ul>
+   <h3 id="origin-of-these-data-structures">
+    Origin of these data structures
+   </h3>
+   <p>
+    Again, reading through the relevant PEPs explains a lot about why these
+        came to be:
+   </p>
+   <table>
+    <thead>
+     <tr>
+      <th>
+       Feature
+      </th>
+      <th>
+       Source
+      </th>
+      <th>
+       Introduced In
+      </th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td>
+       Regular
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           Class
+          </span>
+         </span>
+        </code>
+       </span>
+      </td>
+      <td>
+       Core part of the language since 1.0
+      </td>
+      <td>
+       Python 1.0
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           NamedTuple
+          </span>
+         </span>
+        </code>
+       </span>
+      </td>
+      <td>
+       <a href="https://peps.python.org/pep-0484/">
+        PEP 484 – Type Hints
+       </a>
+      </td>
+      <td>
+       Python 3.5 (2015) (was already in
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           collections
+          </span>
+         </span>
+        </code>
+       </span>
+       <a href="https://docs.python.org/3/whatsnew/2.6.html#new-and-improved-modules">
+        since 2.6
+       </a>
+       )
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           dataclass
+          </span>
+         </span>
+        </code>
+       </span>
+      </td>
+      <td>
+       <a href="https://peps.python.org/pep-0557/">
+        PEP 557 – Data Classes
+       </a>
+      </td>
+      <td>
+       Python 3.7 (2018)
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           TypedDict
+          </span>
+         </span>
+        </code>
+       </span>
+      </td>
+      <td>
+       <a href="https://peps.python.org/pep-0589">
+        PEP 589 – TypedDict: Type Hints for Dictionaries with a Fixed
+                Set of Keys
+       </a>
+      </td>
+      <td>
+       Python 3.8 (2019, via typing_extensions, later stdlib)
+      </td>
+     </tr>
+    </tbody>
+   </table>
+   <h3 id="features-comparison">
+    Features comparison
+   </h3>
+   <p>
+    All these data structures offer static type checking features but they
+        differ in purpose and behaviour/ergonomics:
+   </p>
+   <ul>
+    <li>
+     In most cases, in a new codebase, you will be using a
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         dataclass
+        </span>
+       </span>
+      </code>
+     </span>
+     .
+    </li>
+    <li>
+     In a legacy codebase were python dict are used and you can't change
+          that, it may be easier to use
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         TypedDict
+        </span>
+       </span>
+      </code>
+     </span>
+     to avoid breaking existing APIs.
+    </li>
+    <li>
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         NamedTuple
+        </span>
+       </span>
+      </code>
+     </span>
+     are a bit niche, offering immutability and even less overhead than the
+          other options.
+    </li>
+   </ul>
+   <table>
+    <thead>
+     <tr>
+      <th>
+       Feature\Data structure
+      </th>
+      <th>
+       NamedTuple
+      </th>
+      <th>
+       Data Classes
+      </th>
+      <th>
+       TypedDict
+      </th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td>
+       Static type checking
+      </td>
+      <td>
+       ✅
+      </td>
+      <td>
+       ✅
+      </td>
+      <td>
+       ✅
+      </td>
+     </tr>
+     <tr>
+      <td>
+       <strong>
+        Runtime type checking
+       </strong>
+      </td>
+      <td>
+       ❌
+      </td>
+      <td>
+       ❌
+      </td>
+      <td>
+       ❌
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Performance overhead
+      </td>
+      <td>
+       Low/none
+      </td>
+      <td>
+       Minimal
+      </td>
+      <td>
+       None
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Mutability
+      </td>
+      <td>
+       Immutable
+      </td>
+      <td>
+       Mutable
+       <br/>
+       (can be
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           frozen
+          </span>
+         </span>
+        </code>
+       </span>
+       )
+      </td>
+      <td>
+       Mutable by default
+       <br/>
+       (but
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           NotRequired
+          </span>
+         </span>
+        </code>
+       </span>
+       and
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           Required
+          </span>
+         </span>
+        </code>
+       </span>
+       hints exists)
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Structure fixed at runtime (can't add new 'fields')
+      </td>
+      <td>
+       ✅
+       <br/>
+      </td>
+      <td>
+       ✅
+      </td>
+      <td>
+       ❌ (although
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           NotRequired
+          </span>
+         </span>
+        </code>
+       </span>
+       and
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           Required
+          </span>
+         </span>
+        </code>
+       </span>
+       hints exists, and also
+       <span data-rehype-pretty-code-figure="">
+        <code data-language="python" data-theme="tokyo-night">
+         <span data-line="">
+          <span style="color: #a9b1d6">
+           total
+          </span>
+          <span style="color: #89ddff">
+           =
+          </span>
+          <span style="color: #ff9e64">
+           False
+          </span>
+         </span>
+        </code>
+       </span>
+       in 3.11)
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Access pattern
+       <br/>
+      </td>
+      <td>
+       Attribute
+      </td>
+      <td>
+       Attribute
+      </td>
+      <td>
+       Key-based
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Compatibility with dicts
+      </td>
+      <td>
+       ❌
+      </td>
+      <td>
+       ❌
+      </td>
+      <td>
+       ✅
+      </td>
+     </tr>
+     <tr>
+      <td>
+       Standard library
+      </td>
+      <td>
+       ✅
+      </td>
+      <td>
+       ✅
+      </td>
+      <td>
+       ✅ (since 3.8)
+      </td>
+     </tr>
+    </tbody>
+   </table>
+   <p>
+    To learn more about them, I found the following resources helpful:
+   </p>
+   <ul>
+    <li>
+     reading the PEPs I linked
+    </li>
+    <li>
+     Blog posts I enjoyed reading
+     <ul>
+      <li>
+       <a href="https://www.speakeasy.com/blog/pydantic-vs-dataclasses">
+        Tristan Cartledge from speakeasy: Type Safety in Python:
+                Pydantic vs. Data Classes vs. Annotations vs. TypedDicts
+       </a>
+      </li>
+      <li>
+       <a href="https://death.andgravity.com/namedtuples">
+        Adrian (death and gravity) - namedtuple in a post-dataclasses
+                world
+       </a>
+      </li>
+      <li>
+       <a href="https://nekrozqliphort.github.io/posts/named-tuple-p1/">
+        Ryan Chung - Learner's Notes: The Curious Case of How
+                typing.NamedTuple Works (Part 1)
+       </a>
+      </li>
+     </ul>
+    </li>
+   </ul>
+   <h2 id="validation-at-runtime">
+    Validation at Runtime
+   </h2>
+   <p>
+    These 3 data structures, and python in general, provides
+    <em>
+     no guarantees
+    </em>
+    about runtime type safety.
+   </p>
+   <p>
+    To handle ill-typed values at runtime, you would have to manually assert
+        correctness with
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        isinstance
+       </span>
+      </span>
+     </code>
+    </span>
+    ,
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        issubclass
+       </span>
+      </span>
+     </code>
+    </span>
+    checks throughout your program.
+   </p>
+   <h3 id="simple-example-with-a-typeddict">
+    Simple example with a TypedDict
+   </h3>
+   <p>
+    When data comes from
+    <em>
+     within
+    </em>
+    the program, your type checker
+        knows its type and can verify it satisfies the typed-dict requirements.
+        So in the example, below your type checker / linter will complain and
+        tell you you're making a type error:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> typing </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> TypedDict</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Payload</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">TypedDict</span><span style="color:#89DDFF">)</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    a</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> int</span></span>
+<span data-line=""><span style="color:#A9B1D6">    b</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> bool</span></span>
+<span data-line=""><span style="color:#A9B1D6">    c</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> str</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># data comes from within the program</span></span>
+<span data-line=""><span style="color:#A9B1D6">p </span><span style="color:#89DDFF">=</span><span style="color:#7AA2F7"> Payload</span><span style="color:#9ABDF5">(</span></span>
+<span data-line=""><span style="color:#89DDFF">    {</span></span>
+<span data-line=""><span style="color:#89DDFF">        "</span><span style="color:#9ECE6A">a</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">:</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">hello</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span></span>
+<span data-line=""><span style="color:#89DDFF">        "</span><span style="color:#9ECE6A">b</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">:</span><span style="color:#FF9E64"> 1</span><span style="color:#89DDFF">,</span></span>
+<span data-line=""><span style="color:#89DDFF">        "</span><span style="color:#9ECE6A">c</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">:</span><span style="color:#FF9E64"> 3.14</span><span style="color:#89DDFF">,</span></span>
+<span data-line=""><span style="color:#89DDFF">    }</span></span>
+<span data-line=""><span style="color:#9ABDF5">)</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">Diagnostics:</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">1. Argument of type "dict[str, str | int | float]" cannot be assigned to parameter "__map" of type "Payload" in function "__init__"</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">     "Literal['hello']" is not assignable to "int"</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">     "Literal[1]" is not assignable to "bool"</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">     "float" is not assignable to "str"</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#0DB9D7">print</span><span style="color:#9ABDF5">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">TD:</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> p</span><span style="color:#9ABDF5">)</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">TD: {'a': 'hello', 'b': 1, 'c': 3.14}</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span></code></pre>
+   </figure>
+   <p>
+    However, your type checker can't inspect data coming from outside your
+        code via some form of input/output (I/O). For example if you're
+        ingesting a JSON payload stored locally on disk:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> json</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> typing </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> TypedDict</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Payload</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">TypedDict</span><span style="color:#89DDFF">)</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    a</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> int</span></span>
+<span data-line=""><span style="color:#A9B1D6">    b</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> bool</span></span>
+<span data-line=""><span style="color:#A9B1D6">    c</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> str</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># I/O</span></span>
+<span data-line=""><span style="color:#BB9AF7">with</span><span style="color:#0DB9D7"> open</span><span style="color:#9ABDF5">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">payload.json</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">r</span><span style="color:#89DDFF">"</span><span style="color:#9ABDF5">)</span><span style="color:#BB9AF7"> as</span><span style="color:#A9B1D6"> f</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    raw_json </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> json</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">loads</span><span style="color:#9ABDF5">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">read</span><span style="color:#9ABDF5">())</span></span>
+<span data-line=""><span style="color:#A9B1D6">p </span><span style="color:#89DDFF">=</span><span style="color:#7AA2F7"> Payload</span><span style="color:#9ABDF5">(</span><span style="color:#C0CAF5">raw_json</span><span style="color:#9ABDF5">)</span><span style="color:#51597D;font-style:italic">  # no diagnostic!</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#0DB9D7">print</span><span style="color:#9ABDF5">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">TD (I/O):</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#C0CAF5"> p</span><span style="color:#9ABDF5">)</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">TD (I/O): {'a': 'hello', 'b': 1, 'c': 3.14}</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">"""</span></span></code></pre>
+   </figure>
+   <p>
+    Your type checker won't warn you of any type problem since it can't know
+        the type in the json payload.
+   </p>
+   <p>
+    It infers
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        json
+       </span>
+       <span style="color: #89ddff">
+        .
+       </span>
+       <span style="color: #a9b1d6">
+        loads
+       </span>
+      </span>
+     </code>
+    </span>
+    return type as
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        Any
+       </span>
+      </span>
+     </code>
+    </span>
+    which can be assigned to anything. There can't be any diagnostic raised
+        from then on. Casting to
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        Any
+       </span>
+      </span>
+     </code>
+    </span>
+    effectively bypasses all type safety checks, 'regressing' to
+        fully-dynamic Python.
+   </p>
+   <p>
+    <strong>
+     Note:
+    </strong>
+    To some extent, you could guard yourself against
+        this by enabling warnings when
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        Any
+       </span>
+      </span>
+     </code>
+    </span>
+    is used (flake8's
+    <a href="https://docs.astral.sh/ruff/rules/any-type/">
+     ANN-401
+    </a>
+    ). But
+        this would mean having to inspect every IO payload, essentially doing
+        the work Pydantic offers, see next section.
+   </p>
+   <p>
+    Crucially, notice that in both cases no error were raised at runtime
+        despite the type hints from the TD being violated every time! The
+        programs runs and value are interpreted correctly with their 'bad' type.
+        In the end, the TD is just a plain dict at runtime which simply holds
+        whatever values were passed with whatever their types are.
+   </p>
+   <h3 id="what-can-be-done-at-runtime-enter-pydantic-models">
+    What can be done at runtime ? Enter pydantic models
+   </h3>
+   <p>
+    This is exactly the purpose of Pydantic's models. Validating that data
+        follows a certain shape (read 'schema' or type) - sometimes going
+        further with data coercion -
+    <em>
+     at runtime
+    </em>
+    .
+   </p>
+   <p>
+    You can view Pydantic's
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        BaseModel
+       </span>
+      </span>
+     </code>
+    </span>
+    as allowing you to create dataclasses that will perform runtime type
+        checks.
+   </p>
+   <p>
+    Note: You can also wrap any Python type in Pydantic's
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        TypeAdapter
+       </span>
+      </span>
+     </code>
+    </span>
+    to have it perform runtime checks.
+   </p>
+   <p>
+    Using a
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        BaseModel
+       </span>
+      </span>
+     </code>
+    </span>
+    , the example from earlier will now raise a
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ValidationError
+       </span>
+      </span>
+     </code>
+    </span>
+    :
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> json</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> pydantic </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> BaseModel</span><span style="color:#89DDFF">,</span><span style="color:#A9B1D6"> ValidationError</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> Payload</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">BaseModel</span><span style="color:#89DDFF">)</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    a</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> int</span></span>
+<span data-line=""><span style="color:#A9B1D6">    b</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> bool</span></span>
+<span data-line=""><span style="color:#A9B1D6">    c</span><span style="color:#89DDFF">:</span><span style="color:#0DB9D7"> str</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># I/O with pydantic</span></span>
+<span data-line=""><span style="color:#BB9AF7">with</span><span style="color:#0DB9D7"> open</span><span style="color:#9ABDF5">(</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">payload.json</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">r</span><span style="color:#89DDFF">"</span><span style="color:#9ABDF5">)</span><span style="color:#BB9AF7"> as</span><span style="color:#A9B1D6"> f</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    raw_json </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> json</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">loads</span><span style="color:#9ABDF5">(</span><span style="color:#C0CAF5">f</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">read</span><span style="color:#9ABDF5">())</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">try</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    p </span><span style="color:#89DDFF">=</span><span style="color:#A9B1D6"> Payload</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">model_validate</span><span style="color:#9ABDF5">(</span><span style="color:#C0CAF5">raw_json</span><span style="color:#89DDFF">,</span><span style="color:#E0AF68"> strict</span><span style="color:#89DDFF">=</span><span style="color:#FF9E64">True</span><span style="color:#9ABDF5">)</span><span style="color:#51597D;font-style:italic">  # No static diagnostic still</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">except</span><span style="color:#A9B1D6"> ValidationError </span><span style="color:#BB9AF7">as</span><span style="color:#A9B1D6"> e</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#0DB9D7">    print</span><span style="color:#9ABDF5">(</span><span style="color:#C0CAF5">e</span><span style="color:#9ABDF5">)</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">    """</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">    3 validation errors for Payload</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">        a</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">          Input should be a valid integer [type=int_type, input_value='hello', input_type=str]</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">            For further information visit https://errors.pydantic.dev/2.11/v/int_type</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">        b</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">          Input should be a valid boolean [type=bool_type, input_value=1, input_type=int]</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">            For further information visit https://errors.pydantic.dev/2.11/v/bool_type</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">        c</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">          Input should be a valid string [type=string_type, input_value=3.14, input_type=float]</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">            For further information visit https://errors.pydantic.dev/2.11/v/string_type</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">    """</span></span></code></pre>
+   </figure>
+   <p>
+    Note: Without
+    <a href="https://docs.pydantic.dev/latest/concepts/strict_mode/">
+     strict mode
+    </a>
+    -
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        strict
+       </span>
+       <span style="color: #89ddff">
+        =
+       </span>
+       <span style="color: #ff9e64">
+        True
+       </span>
+      </span>
+     </code>
+    </span>
+    , Pydantic coerces the integer
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        1
+       </span>
+      </span>
+     </code>
+    </span>
+    for the field
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        b
+       </span>
+      </span>
+     </code>
+    </span>
+    to the boolean value
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #ff9e64">
+        True
+       </span>
+      </span>
+     </code>
+    </span>
+    leading to only 2 validation errors being raised.
+   </p>
+   <p>
+    Such validation is essential to build a reliable system if it interacts
+        with the outside world.
+   </p>
+   <p>
+    Validation can also be very useful even from within the program itself.
+        Similar to assert-ridden code in True
+    <a href="https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md">
+     TigerStyle
+    </a>
+    , this helps make explicit invariants and the type safety of the
+        program, failing early if bad data made its way into the system.
+   </p>
+   <p>
+    Using Pydantic models, you keep
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        dataclass
+       </span>
+      </span>
+     </code>
+    </span>
+    style ergonomics, trading-off
+    <em>
+     minimal
+    </em>
+    overhead for runtime type
+        safety.
+   </p>
+   <p>
+    Note: The overhead was already minimal with Pydantic 1.0, and is even
+        less with
+    <a href="https://docs.pydantic.dev/latest/internals/architecture/">
+     2.0
+    </a>
+    now that
+    <a href="https://github.com/pydantic/pydantic-core">
+     the core
+    </a>
+    is
+        implemented in Rust. Anyways, if you're that concerned with performance
+        and that kind of overhead, you should not be using python in the first
+        place.
+   </p>
+   <h1 id="complex-pydantic-models">
+    Complex Pydantic models
+   </h1>
+   <p>
+    Remember the problem of
+    <em>
+     undefined annotations
+    </em>
+    ? It was solved
+        by postponing the evaluation annotations at runtime (via turning them
+        into strings or later via the newer PEP 649 mechanism).
+   </p>
+   <p>
+    But Pydantic needs to evaluate such annotations at runtime to construct
+        its internal schemas and ultimately be able to validate data.
+   </p>
+   <p>
+    So while postponing evaluation helps with static analysis, it can hurt
+        Pydantic which needs type hints to resolve at runtime.
+   </p>
+   <h3 id="simpler-scenarios-recursion-and-one-way-dependence">
+    Simpler scenarios - recursion and one-way dependence
+   </h3>
+   <p>
+    In simpler cases, Pydantic works well without any special work required
+        on the programmer's part:
+   </p>
+   <ul>
+    <li>
+     <strong>
+      Recursive
+     </strong>
+     models are solved with forward references +
+          pydantic automatically doing the work internally to resolve them
+          correctly.
+    </li>
+    <li>
+     <strong>
+      One-way dependencies
+     </strong>
+     , e.g. when
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         ModelA
+        </span>
+       </span>
+      </code>
+     </span>
+     depends on
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         ModelB
+        </span>
+       </span>
+      </code>
+     </span>
+     , but
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #a9b1d6">
+         ModelB
+        </span>
+       </span>
+      </code>
+     </span>
+     is stand-alone. You can just import the dependency without any
+          problem.
+     <ul>
+      <li>
+       If it's a
+       <strong>
+        co-dependence
+       </strong>
+       , meaning both A and B
+              depends on each other,
+       <ul>
+        <li>
+         using forward references AND conditional import with
+         <span data-rehype-pretty-code-figure="">
+          <code data-language="python" data-theme="tokyo-night">
+           <span data-line="">
+            <span style="color: #bb9af7">
+             if
+            </span>
+            <span style="color: #ff9e64">
+             TYPE_CHECKING
+            </span>
+           </span>
+          </code>
+         </span>
+         <strong>
+          works for the type checker, but not at runtime
+         </strong>
+         ...
+        </li>
+       </ul>
+      </li>
+     </ul>
+    </li>
+   </ul>
+   <h3 id="complex-scenario-with-co-dependencies">
+    Complex scenario with co-dependencies
+   </h3>
+   <p>
+    You run into problems when two models depend on each other ... For
+        example, both
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    references
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    and
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    references
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    .
+   </p>
+   <h4 id="static-perspective">
+    Static perspective
+   </h4>
+   <p>
+    Again, from a static typing perspective, this is easy to handle:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># a.py</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#C0CAF5"> __future__</span><span style="color:#7DCFFF"> import</span><span style="color:#A9B1D6"> annotations </span><span style="color:#51597D;font-style:italic"># postponing the evaluation of annotations (and type hints are annotations)</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> typing </span><span style="color:#7DCFFF">import</span><span style="color:#FF9E64"> TYPE_CHECKING</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> pydantic </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> BaseModel</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#BB9AF7">if</span><span style="color:#FF9E64"> TYPE_CHECKING</span><span style="color:#89DDFF">:</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic">	# will _not_ be executed at runtime</span></span>
+<span data-line=""><span style="color:#7DCFFF">    from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">b </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelB  </span><span style="color:#51597D;font-style:italic"># only leveraged by static type checkers</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># ModelA depends on ModelB</span></span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> ModelA</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">BaseModel</span><span style="color:#89DDFF">)</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    a</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> ModelB</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># b.py</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#C0CAF5"> __future__</span><span style="color:#7DCFFF"> import</span><span style="color:#A9B1D6"> annotations</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> typing </span><span style="color:#7DCFFF">import</span><span style="color:#FF9E64"> TYPE_CHECKING</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#A9B1D6"> pydantic </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> BaseModel</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">a </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelA</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># ModelB depends on ModelA</span></span>
+<span data-line=""><span style="color:#BB9AF7">class</span><span style="color:#C0CAF5"> ModelB</span><span style="color:#89DDFF">(</span><span style="color:#BB9AF7">BaseModel</span><span style="color:#89DDFF">)</span><span style="color:#9ABDF5">:</span></span>
+<span data-line=""><span style="color:#A9B1D6">    b</span><span style="color:#89DDFF">:</span><span style="color:#A9B1D6"> ModelA</span></span></code></pre>
+   </figure>
+   <p>
+    Note:
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    's definition only has a forward reference to
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    because of the
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #c0caf5">
+        __future__
+       </span>
+      </span>
+     </code>
+    </span>
+    import. And because of the conditional import with
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        typing
+       </span>
+       <span style="color: #89ddff">
+        .
+       </span>
+       <span style="color: #ff9e64">
+        TYPE_CHECKING
+       </span>
+      </span>
+     </code>
+    </span>
+    , this import will not be executed at runtime meaning the
+        forward-reference will, a priori, stay one. It cannot be evaluated in
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    's module namespace (
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        a
+       </span>
+      </span>
+     </code>
+    </span>
+    ).
+   </p>
+   <p>
+    The type-checker is happy. However, if we try to
+    <em>
+     run
+    </em>
+    this code:
+   </p>
+   <p>
+    If you try to use
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    , you will run into this error:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="sh" data-theme="tokyo-night" tabindex="0"><code data-language="sh" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#C0CAF5">pydantic.errors.PydanticUserError:</span><span style="color:#89DDFF"> `</span><span style="color:#C0CAF5">ModelA</span><span style="color:#89DDFF">`</span><span style="color:#C0CAF5"> is</span><span style="color:#9ECE6A"> not</span><span style="color:#9ECE6A"> fully</span><span style="color:#9ECE6A"> defined</span><span style="color:#89DDFF">;</span></span>
+<span data-line=""><span style="color:#C0CAF5">you</span><span style="color:#9ECE6A"> should</span><span style="color:#9ECE6A"> define</span><span style="color:#89DDFF"> `</span><span style="color:#C0CAF5">ModelB</span><span style="color:#89DDFF">`</span><span style="color:#C0CAF5">,</span><span style="color:#9ECE6A"> then</span><span style="color:#9ECE6A"> call</span><span style="color:#7AA2F7"> `ModelA.model_rebuild</span><span style="color:#9ABDF5">()</span><span style="color:#89DDFF">`</span><span style="color:#0DB9D7">.</span></span></code></pre>
+   </figure>
+   <p>
+    Because its dependence on
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    is not actually imported at runtime,
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    is not yet fully defined. Pydantic had no way to complete its internal
+        build.
+   </p>
+   <h4 id="the-solution-rebuilding">
+    The solution: rebuilding
+   </h4>
+   <p>
+    As the error suggests, the solution is to
+    <em>
+     rebuild
+    </em>
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    somewhere
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    is actually available.
+   </p>
+   <p>
+    Note: in Pydantic v1, this method was called
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        update_forward_refs
+       </span>
+      </span>
+     </code>
+    </span>
+    , which makes a lot of sense here as we focus on the forward reference
+        problem. However, rebuilding models takes care of other problems as well
+        such as nested schemas, generics and maybe more!
+   </p>
+   <p>
+    Note: by "available" I mean that the type referred to by the stringified
+        annotation must exists in the namespace built by pydantic, which as a
+        first mental model can be though of as the Model parent module (in which
+        it is being defined, or rebuilt!).
+   </p>
+   <p>
+    If you naively try to rebuild
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelA
+       </span>
+      </span>
+     </code>
+    </span>
+    right after its definition, it will not work:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># rebuilding in ModuleA's own module, after the model definition</span></span>
+<span data-line=""><span style="color:#A9B1D6">ModelA</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">model_rebuild</span><span style="color:#9ABDF5">()</span></span></code></pre>
+   </figure>
+   <p>
+    You get an 'undefined annotation' error:
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="sh" data-theme="tokyo-night" tabindex="0"><code data-language="sh" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#C0CAF5">pydantic.errors.PydanticUndefinedAnnotation:</span><span style="color:#9ECE6A"> name</span><span style="color:#89DDFF"> '</span><span style="color:#9ECE6A">ModelB</span><span style="color:#89DDFF">'</span><span style="color:#9ECE6A"> is</span><span style="color:#9ECE6A"> not</span><span style="color:#9ECE6A"> defined</span></span>
+<span data-line=""><span style="color:#C0CAF5">For</span><span style="color:#9ECE6A"> further</span><span style="color:#9ECE6A"> information</span><span style="color:#9ECE6A"> visit</span><span style="color:#9ECE6A"> https://errors.pydantic.dev/2.11/u/undefined-annotation</span></span></code></pre>
+   </figure>
+   <p>
+    This makes sense once you understand that
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #a9b1d6">
+        ModelB
+       </span>
+      </span>
+     </code>
+    </span>
+    still is not present in the module namespace.
+   </p>
+   <p>
+    What's the solution? Rebuild models in a place where imports are
+        controlled. Controlled in the sense that:
+   </p>
+   <ul>
+    <li>
+     all models dependencies are imported
+    </li>
+    <li>
+     and every model is rebuilt properly before being used.
+    </li>
+   </ul>
+   <p>
+    <strong>
+     <span data-rehype-pretty-code-figure="">
+      <code data-language="python" data-theme="tokyo-night">
+       <span data-line="">
+        <span style="color: #0db9d7">
+         __init__
+        </span>
+        <span style="color: #89ddff">
+         .
+        </span>
+        <span style="color: #a9b1d6">
+         py
+        </span>
+       </span>
+      </code>
+     </span>
+     files are perfect for this.
+    </strong>
+    They can then re-export/expose completed Pydantic models to other
+        modules, so that consumer code always get correctly built models.
+   </p>
+   <p>
+    Then, other modules will import models from the central
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        __init__
+       </span>
+      </span>
+     </code>
+    </span>
+    module where rebuilding happens once, centralised, before any actual use
+        of the model
+   </p>
+   <p>
+    <span data-rehype-pretty-code-figure="">
+     <code data-language="python" data-theme="tokyo-night">
+      <span data-line="">
+       <span style="color: #0db9d7">
+        __init__
+       </span>
+      </span>
+     </code>
+    </span>
+    files finalize model definition and re-export them so that consumer code
+        always get correctly built models.
+   </p>
+   <figure data-rehype-pretty-code-figure="">
+    <pre data-language="python" data-theme="tokyo-night" tabindex="0"><code data-language="python" data-theme="tokyo-night" style="display: grid;"><span data-line=""><span style="color:#51597D;font-style:italic"># In __init__.py</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">a </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelA</span></span>
+<span data-line=""><span style="color:#7DCFFF">from</span><span style="color:#89DDFF"> .</span><span style="color:#A9B1D6">b </span><span style="color:#7DCFFF">import</span><span style="color:#A9B1D6"> ModelB</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># Try to rebuild either 0, 1 or both models.</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># Depending on the rebuilds you do and which model you use afterward, the program will crash</span></span>
+<span data-line=""><span style="color:#A9B1D6">ModelA</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">model_rebuild</span><span style="color:#9ABDF5">()</span></span>
+<span data-line=""><span style="color:#A9B1D6">ModelB</span><span style="color:#89DDFF">.</span><span style="color:#7AA2F7">model_rebuild</span><span style="color:#9ABDF5">()</span></span>
+<span data-line=""> </span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># Try to use a model. E.g., by getting its JSON schema</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># ModelA.model_json_schema()</span></span>
+<span data-line=""><span style="color:#51597D;font-style:italic"># ModelB.model_json_schema()</span></span>
+<span data-line=""> </span>
+<span data-line=""><span style="color:#C0CAF5">__all__</span><span style="color:#89DDFF"> =</span><span style="color:#89DDFF"> [</span><span style="color:#89DDFF">"</span><span style="color:#9ECE6A">ModelA</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">,</span><span style="color:#89DDFF"> "</span><span style="color:#9ECE6A">ModelB</span><span style="color:#89DDFF">"</span><span style="color:#89DDFF">]</span><span style="color:#51597D;font-style:italic">  # not necessary but this exposes the models cleanly</span></span></code></pre>
+   </figure>
+   <p>
+    Starting in python 3.14 implementing PEP 649/749, the future import is
+        not needed. The conditional import will still be needed to avoid
+        circular import problems. And correctly rebuilding Pydantic models to be
+        able to resolve all type hints at runtime will still be needed, although
+        the internals of Pydantic itself will probably evolve to take advantage
+        of the new annotation mechanisms.
+   </p>
+   <p>
+    Always good to read the docs:
+   </p>
+   <ul>
+    <li>
+     <a href="https://docs.pydantic.dev/latest/concepts/models/#extra-data">
+      Nested
+     </a>
+     and
+     <a href="https://docs.pydantic.dev/latest/concepts/forward_annotations/#self-referencing-or-recursive-models">
+      self-referencing
+     </a>
+     models
+    </li>
+    <li>
+     <a href="https://docs.pydantic.dev/latest/concepts/models/#rebuilding-model-schema">
+      Rebuilding model schema
+     </a>
+    </li>
+    <li>
+     <a href="https://docs.pydantic.dev/latest/internals/resolving_annotations/">
+      Resolving Annotations
+     </a>
+    </li>
+   </ul>
+  </main>
+  <footer class="py-10 text-xl">
+   <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
+    <ul class="flex space-x-4">
+     <li class="hover:text-neutral-200 transition duration-100 ease">
+      <a href="https://github.com/NicolasPllr1" target="_blank">
+       github
+      </a>
+     </li>
+     <li class="hover:text-neutral-200 transition duration-100 ease">
+      <a href="https://x.com/nicolas_clark2" target="_blank">
+       x/twitter
+      </a>
+     </li>
+    </ul>
+   </nav>
+  </footer>
+  <div class="fixed inset-0 flex items-start justify-center hidden z-50 pointer-events-none" id="search-modal">
+   <!-- This transparent overlay will only capture clicks outside the modal -->
+   <div class="absolute inset-0 pointer-events-auto" id="search-backdrop" style="background: rgba(0, 0, 0, 0.3)">
+   </div>
+   <div class="bg-gray-800 bg-opacity-90 backdrop-blur-sm w-full max-w-xl mx-auto mt-20 rounded-lg shadow-lg overflow-hidden pointer-events-auto border border-gray-700">
+    <div class="p-4 border-b border-gray-700 flex items-center">
+     <svg class="text-gray-400 mr-3" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="11" cy="11" r="8">
+      </circle>
+      <line x1="21" x2="16.65" y1="21" y2="16.65">
+      </line>
+     </svg>
+     <input autofocus="" class="w-full bg-transparent border-none outline-none text-white" id="search-input" placeholder="Search for anything..." type="text"/>
+     <div class="text-gray-400 text-sm ml-2">
+      ESC to close
+     </div>
+    </div>
+    <div class="max-h-96 overflow-y-auto" id="search-results">
+     <!-- Results will appear here -->
+    </div>
+   </div>
+  </div>
+  <script src="/search.js">
+  </script>
+ </body>
+</html>
