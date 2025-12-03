@@ -17,7 +17,7 @@
         
         async function initializeSearch() {
             searchEngine = new SearchEngine();
-            await searchEngine.initialize('./zig-search/search.wasm', './zig-search/dist/search-index.bin' , './zig-search/dist/docs-mapping.json');
+            await searchEngine.initialize('./zig-search/dist/search.wasm', './zig-search/dist/search-index.bin' , './zig-search/dist/docs-mapping.json');
             console.log('Search engine initialized!');
         }
         
