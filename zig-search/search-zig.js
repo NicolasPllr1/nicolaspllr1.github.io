@@ -38,6 +38,19 @@ class SearchEngine {
     this.ready = true;
   }
 
+  generateSlug(text) {
+    if (typeof text !== 'string' || text === null) {
+      return ''; // Handle non-string or null input gracefully
+    }
+
+    let slug = text.trim().toLowerCase();
+    slug = slug.replace(/[^a-z0-9\s-]/g, '');
+    slug = slug.replace(/\s+/g, '-');
+    slug = slug.replace(/-+/g, '-');
+    slug = slug.replace(/^-+|-+$/g, '');
+    return slug;
+  }
+
   search(query) {
     if (!this.ready) throw new Error('Search engine not ready');
 
@@ -65,8 +78,8 @@ class SearchEngine {
     // Enhance with mapping data
     return docIds.map(docId => ({
       docId,
-      link: this.docMappings[docId]?.link || null,
-      title: this.docMappings[docId]?.title || `Document ${docId}`
+      title: this.docMappings[docId]?.title || `Document ${docId}`,
+      link: this.docMappings[docId]?.link || "",
     }));
   }
 
