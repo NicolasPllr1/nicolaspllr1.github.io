@@ -8,29 +8,18 @@ class SearchEngine {
 
   async initialize(wasmPath, indexPath, mappingsPath) {
     // Load WASM
-    const wasmResponse = await fetch(wasmPath);
-    const wasmBytes = await wasmResponse.arrayBuffer();
-    console.log("HERE 1");
-    const wasmModule = await WebAssembly.instantiate(wasmBytes);
-    console.log("HERE 2");
-    this.wasmInstance = await WebAssembly.instantiate(wasmModule, {});
-    console.log("HERE 3");
-    this.wasmInstance = await WebAssembly.instantiate(wasmModule, {});
-    this.memory = this.wasmInstance.exports.memory;
+    console.log("before wasmBytes");
+    const wasmBytes = await (await fetch(wasmPath)).arrayBuffer();
+    console.log("after wasmBytes");
+    const { instance } = await WebAssembly.instantiate(wasmBytes, {});
+    console.log("after instance");
+    this.wasmInstance = instance;
+    this.memory = instance.exports.memory;
 
     console.log("1");
-    // fetch('greet.wasm').then(response => 
-    //             response.arrayBuffer()
-    //         ).then(bytes => WebAssembly.instantiate(bytes, {}))
-    //         .then(results => {
-    //             const greet = results.instance.exports.greet;
-    //             const greetingMessage = document.createTextNode(greet());
-    //             document.body.appendChild(greetingMessage);
-    //         });
 
     // Load pre-built index
-    const indexResponse = await fetch(indexPath);
-    const indexData = new Uint8Array(await indexResponse.arrayBuffer());
+    const indexData = new Uint8Array(await (await fetch(indexPath)).arrayBuffer());
     const indexPtr = this.allocBytes(indexData);
     console.log("2");
 
@@ -82,8 +71,8 @@ class SearchEngine {
   }
 
   getDocument(docId) {
-    if (!this.initialized) {
-      throw new Error('Search engine not initialized');
+    if (!this.ready) {
+      throw new Error('Search engine not ready');
     }
 
     const resultPtr = this.wasmInstance.exports.wasm_alloc(8);
@@ -107,6 +96,30 @@ class SearchEngine {
     this.wasmInstance.exports.wasm_free(resultPtr, 8);
 
     return text;
+  }
+
+  // Allocate and copy bytes into Wasm memory. Accepts Uint8Array or ArrayBuffer.
+  allocBytes(src) {
+    let bytes;
+    if (src instanceof Uint8Array) {
+      bytes = src;
+    } else if (src instanceof ArrayBuffer) {
+      bytes = new Uint8Array(src);
+    } else {
+      throw new Error("allocBytes expects Uint8Array or ArrayBuffer");
+    }
+
+    const len = bytes.length;
+    const ptr = this.wasmInstance.exports.wasm_alloc(len);
+    if (!ptr) throw new Error("wasm_alloc failed");
+
+    // Important: create the view AFTER allocation in case memory grew.
+    new Uint8Array(this.wasmInstance.exports.memory.buffer, ptr, len).set(bytes);
+    return ptr;
+  }
+
+  freeBytes(ptr, len) {
+    this.wasmInstance.exports.wasm_free(ptr, len);
   }
 
   // Utility methods for string handling

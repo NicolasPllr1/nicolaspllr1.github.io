@@ -11,10 +11,9 @@
     <div id="results"></div>
     
     <script src="./zig-search/search-zig.js"></script>
-    <script src="./zig-search/search-zig-doc-mapping.js"></script>
+    <!-- <script src="./zig-search/search-zig-doc-mapping.js"></script> -->
     <script>
         let searchEngine;
-        let docMapper;
         
         async function initializeSearch() {
             searchEngine = new SearchEngine();
@@ -27,31 +26,31 @@
             if (!query.trim()) return;
             
             try {
-                const docIds = searchEngine.search(query);
-                displayResults(docIds);
+                const results = searchEngine.search(query); // array of { docId, link, title }
+                displayResults(results);
             } catch (error) {
                 console.error('Search error:', error);
             }
         }
         
-        function displayResults(docIds) {
+        function displayResults(results) {
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
             
-            if (docIds.length === 0) {
+            if (results.length === 0) {
                 resultsDiv.innerHTML = '<p>No results found.</p>';
                 return;
             }
             
             const resultsList = document.createElement('ul');
-            docIds.forEach(docId => {
+            results.forEach(item => {
                 const li = document.createElement('li');
-                const link = docMapper.getLink(docId);
-                
-                if (link) {
-                    li.innerHTML = `<a href="${link}">Document ${docId}</a>`;
+
+                const title = item.title ?? `Document ${item.docId}`;
+                if (item.link) {
+                    li.innerHTML = `<a href="${item.link}">${title}</a>`;
                 } else {
-                    li.textContent = `Document ${docId}`;
+                    li.textContent = title;
                 }
                 
                 resultsList.appendChild(li);
