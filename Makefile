@@ -16,5 +16,6 @@ add-slugs: ## Add unique IDs (slugs) to headings in an HTML file
 		exit 1; \
 	fi
 	@echo "Adding slugs to HTML file: $(FILE)"
-	./add_slugs.sh "$(FILE)"
+	uv run --with bs4 slugs.py "$(FILE)"
+	npx prettier "$(FILE)" --write
 	@echo "Slugs added and file formatted."
