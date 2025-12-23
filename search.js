@@ -1,6 +1,6 @@
-const WASM_MODULE_PATH = '/zig-search/dist/search.wasm'
-const WASM_INDEX_PATH = '/zig-search/dist/search-index.bin'
-const DOCS_MAPPING_PATH = '/zig-search/dist/docs-mapping.json'
+const WASM_MODULE_PATH = '/wasm-search/search.wasm'
+const WASM_INDEX_PATH = '/wasm-search/search-index.bin'
+const DOCS_MAPPING_PATH = '/wasm-search/docs-mapping.json'
 
 const searchModal = document.getElementById('search-modal')
 const searchInput = document.getElementById('search-input')
