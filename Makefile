@@ -8,7 +8,7 @@ server:
 
 
 md2html:
-	node convert.js
+	node scripts/convert.js
 
 add-slugs: ## Add unique IDs (slugs) to headings in an HTML file
 	@if [ -z "$(FILE)" ]; then \
@@ -16,6 +16,6 @@ add-slugs: ## Add unique IDs (slugs) to headings in an HTML file
 		exit 1; \
 	fi
 	@echo "Adding slugs to HTML file: $(FILE)"
-	uv run --with bs4 slugs.py "$(FILE)"
+	uv run --with bs4 scripts/slugs.py "$(FILE)"
 	npx prettier "$(FILE)" --write
 	@echo "Slugs added and file formatted."
