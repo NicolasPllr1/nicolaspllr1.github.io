@@ -141,9 +141,7 @@ class SearchEngine {
   }
 }
 
-// Export for use
+// Export for internal use
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = SearchEngine;
-} else {
-  window.SearchEngine = SearchEngine;
 }

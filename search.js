@@ -1,140 +1,181 @@
-const WASM_MODULE_PATH = '/wasm-search/search.wasm'
-const WASM_INDEX_PATH = '/wasm-search/search-index.bin'
-const DOCS_MAPPING_PATH = '/wasm-search/docs-mapping.json'
+/**
+ * SearchModal - Unified search module
+ * Encapsulates WASM engine initialization, modal UI, and search logic
+ */
+class SearchModal {
+  constructor(config = {}) {
+    this.config = {
+      wasmPath: config.wasmPath || '/wasm-search/search.wasm',
+      indexPath: config.indexPath || '/wasm-search/search-index.bin',
+      mappingsPath: config.mappingsPath || '/wasm-search/docs-mapping.json',
+    };
 
-const searchModal = document.getElementById('search-modal')
-const searchInput = document.getElementById('search-input')
-const resultsContainer = document.getElementById('search-results')
+    this.engine = null;
+    this.isInitialized = false;
+    this.isInitializing = false;
 
+    // DOM elements
+    this.modal = document.getElementById('search-modal');
+    this.input = document.getElementById('search-input');
+    this.resultsContainer = document.getElementById('search-results');
+    this.backdrop = document.getElementById('search-backdrop');
 
-let searchEngine
-let isSearchEngineInitialized = false
+    if (!this.modal || !this.input || !this.resultsContainer) {
+      console.error('SearchModal: Required DOM elements not found');
+      return;
+    }
 
-// Initialize the search engine asynchronously
-async function initializeSearchEngine() {
-  console.log("Loading the search engine");
-  if (!searchEngine) {
-    // Only instantiate once
-    searchEngine = new SearchEngine() // Assuming SearchEngine is globally available from search-zig.js
-    try {
-      await searchEngine.initialize(
-        WASM_MODULE_PATH,
-        WASM_INDEX_PATH,
-        DOCS_MAPPING_PATH
-      )
-      isSearchEngineInitialized = true
-      console.log('WASM Search engine initialized!')
-      // If the modal is already open, and a query exists, perform search now
-      if (!searchModal.classList.contains('hidden') && searchInput.value) {
-        performSearch()
-      }
-    } catch (error) {
-      console.error('Failed to initialize WASM Search Engine:', error)
-      resultsContainer.innerHTML =
-        '<div class="p-4 text-red-400">Error loading search engine.</div>'
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+    // Cmd+K text in nav
+    const navText = document.querySelector('nav p');
+    if (navText) {
+      navText.addEventListener('click', () => this.open());
+    }
+
+    // Search input
+    this.input.addEventListener('input', () => this.search());
+
+    // Modal backdrop and outside clicks
+    this.backdrop.addEventListener('click', () => this.close());
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) this.close();
+    });
+  }
+
+  handleKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      this.open();
+    }
+
+    if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
+      this.close();
     }
   }
+
+  async initialize() {
+    if (this.isInitialized || this.isInitializing) return;
+
+    this.isInitializing = true;
+
+    try {
+      // Dynamically load the WASM engine if not available
+      if (typeof SearchEngine === 'undefined') {
+        const script = document.createElement('script');
+        script.src = '/wasm-search/search-zig.js';
+        document.head.appendChild(script);
+        await new Promise(resolve => {
+          script.onload = resolve;
+        });
+      }
+
+      this.engine = new SearchEngine();
+      await this.engine.initialize(
+        this.config.wasmPath,
+        this.config.indexPath,
+        this.config.mappingsPath
+      );
+
+      this.isInitialized = true;
+      console.log('Search modal initialized');
+
+      // If modal was opened before engine was ready, search now
+      if (!this.modal.classList.contains('hidden') && this.input.value) {
+        this.search();
+      }
+    } catch (error) {
+      console.error('Failed to initialize search modal:', error);
+      this.showError('Error loading search engine.');
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
+  open() {
+    this.modal.classList.remove('hidden');
+    this.modal.classList.add('flex');
+    this.input.focus();
+
+    // Initialize engine on first open
+    if (!this.isInitialized && !this.isInitializing) {
+      this.initialize();
+    }
+  }
+
+  close() {
+    this.modal.classList.add('hidden');
+    this.modal.classList.remove('flex');
+    this.input.value = '';
+    this.resultsContainer.innerHTML = '';
+  }
+
+  search() {
+    const query = this.input.value.toLowerCase().trim();
+    this.resultsContainer.innerHTML = '';
+
+    if (!query) return;
+
+    if (!this.isInitialized) {
+      this.showMessage('Search engine loading, please wait...');
+      return;
+    }
+
+    try {
+      const results = this.engine.search(query);
+
+      if (results.length === 0) {
+        this.showMessage('No results found');
+        return;
+      }
+
+      this.displayResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      this.showError('An error occurred during search.');
+    }
+  }
+
+  displayResults(results) {
+    results.forEach((result) => {
+      const link = document.createElement('a');
+      link.href = result.link || '#';
+      link.classList.add(
+        'block',
+        'p-4',
+        'hover:bg-gray-700',
+        'border-b',
+        'border-gray-700'
+      );
+
+      const title = result.title ?? `Document ${result.docId}`;
+      link.innerHTML = `<div class="font-medium">${title}</div>`;
+
+      link.addEventListener('click', () => this.close());
+
+      this.resultsContainer.appendChild(link);
+    });
+  }
+
+  showMessage(message) {
+    this.resultsContainer.innerHTML = `<div class="p-4 text-gray-400">${message}</div>`;
+  }
+
+  showError(message) {
+    this.resultsContainer.innerHTML = `<div class="p-4 text-red-400">${message}</div>`;
+  }
 }
 
-// Show search modal with Cmd+K or Ctrl+K shortcut
-document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    openSearchModal()
-  }
-
-  if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
-    closeSearchModal()
-  }
-})
-
-// Also make the "cmd+k" text in nav clickable
-document.querySelector('nav p').addEventListener('click', openSearchModal)
-
-function openSearchModal() {
-  searchModal.classList.remove('hidden')
-  searchModal.classList.add('flex')
-  searchInput.focus()
-  // document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+// Auto-initialize on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.searchModal = new SearchModal();
+  });
+} else {
+  window.searchModal = new SearchModal();
 }
-
-function closeSearchModal() {
-  searchModal.classList.add('hidden')
-  searchModal.classList.remove('flex')
-  searchInput.value = ''
-  resultsContainer.innerHTML = ''
-  // document.body.style.overflow = '';
-}
-// Close when clicking on the backdrop
-document
-  .getElementById('search-backdrop')
-  .addEventListener('click', closeSearchModal)
-// Close when clicking outside the modal content
-searchModal.addEventListener('click', (e) => {
-  if (e.target === searchModal) {
-    closeSearchModal()
-  }
-})
-
-// Perform fuzzy search as user types
-searchInput.addEventListener('input', performSearch)
-
-function performSearch() {
-  const query = searchInput.value.toLowerCase().trim()
-  resultsContainer.innerHTML = ''
-
-  if (!query) return
-
-  if (!isSearchEngineInitialized) {
-    // If engine is still loading, don't try to search yet
-    resultsContainer.innerHTML =
-      '<div class="p-4 text-gray-400">Search engine loading, please wait...</div>'
-    return
-  }
-
-  let results = []
-  try {
-    // Call the WASM search engine
-    results = searchEngine.search(query) // array of { docId, link, title }
-  } catch (error) {
-    console.error('WASM Search error:', error)
-    resultsContainer.innerHTML =
-      '<div class="p-4 text-red-400">An error occurred during search.</div>'
-    return
-  }
-
-  if (results.length === 0) {
-    resultsContainer.innerHTML =
-      '<div class="p-4 text-gray-400">No results found</div>'
-    return
-  }
-
-  // Create and display search results
-  results.forEach((result) => {
-    const resultElement = document.createElement('a')
-    resultElement.href = result.link || "#"
-    resultElement.classList.add(
-      'block',
-      'p-4',
-      'hover:bg-gray-700',
-      'border-b',
-      'border-gray-700'
-    )
-
-    const title = result.title ?? `Document ${result.docId}`
-
-
-    resultElement.innerHTML = `
-<div class="font-medium">${title}</div>
-`
-
-    resultElement.addEventListener('click', (e) => {
-      closeSearchModal()
-    })
-
-    resultsContainer.appendChild(resultElement)
-  })
-}
-
-// Initial passive load of the search engine (optional, but good for faster first search)
-initializeSearchEngine();
