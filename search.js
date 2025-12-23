@@ -127,10 +127,21 @@ class SearchModal {
     }
 
     try {
+      // Display query with conjunction symbols
+      const keywords = query.split(/\s+/).filter(k => k.length > 0);
+      const queryDisplay = keywords.join(' ∧ ');
+      const header = document.createElement('div');
+      header.className = 'p-4 text-gray-400 text-center border-b border-gray-700';
+      header.textContent = queryDisplay;
+      this.resultsContainer.appendChild(header);
+
       const results = this.engine.search(query);
 
       if (results.length === 0) {
-        this.showMessage('No results found');
+        const noResults = document.createElement('div');
+        noResults.className = 'p-4 text-gray-400';
+        noResults.textContent = 'No results found';
+        this.resultsContainer.appendChild(noResults);
         return;
       }
 
