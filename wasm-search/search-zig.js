@@ -8,23 +8,16 @@ class SearchEngine {
 
   async initialize(wasmPath, indexPath, mappingsPath) {
     // Load WASM
-    console.log("before wasmBytes");
     const wasmBytes = await (await fetch(wasmPath)).arrayBuffer();
-    console.log("after wasmBytes");
     const { instance } = await WebAssembly.instantiate(wasmBytes, {});
-    console.log("after instance");
     this.wasmInstance = instance;
     this.memory = instance.exports.memory;
-
-    console.log("1");
 
     // Load pre-built index
     const indexData = new Uint8Array(await (await fetch(indexPath)).arrayBuffer());
     const indexPtr = this.allocBytes(indexData);
-    console.log("2");
 
     const success = this.wasmInstance.exports.load_index(indexPtr, indexData.length);
-    console.log("3");
     this.freeBytes(indexPtr, indexData.length);
 
     if (!success) {
@@ -36,19 +29,6 @@ class SearchEngine {
     this.docMappings = await mappingsResponse.json();
 
     this.ready = true;
-  }
-
-  generateSlug(text) {
-    if (typeof text !== 'string' || text === null) {
-      return ''; // Handle non-string or null input gracefully
-    }
-
-    let slug = text.trim().toLowerCase();
-    slug = slug.replace(/[^a-z0-9\s-]/g, '');
-    slug = slug.replace(/\s+/g, '-');
-    slug = slug.replace(/-+/g, '-');
-    slug = slug.replace(/^-+|-+$/g, '');
-    return slug;
   }
 
   search(query) {
