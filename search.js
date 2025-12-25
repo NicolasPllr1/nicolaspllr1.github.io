@@ -5,9 +5,9 @@
 class SearchModal {
   constructor(config = {}) {
     this.config = {
-      wasmPath: config.wasmPath || '/wasm-search/search.wasm',
-      indexPath: config.indexPath || '/wasm-search/search-index.bin',
-      mappingsPath: config.mappingsPath || '/wasm-search/docs-mapping.json',
+      wasmPath: config.wasmPath || '/wasm/search.wasm',
+      indexPath: config.indexPath || '/wasm/search-index.bin',
+      mappingsPath: config.mappingsPath || '/wasm/docs-mapping.json',
     };
 
     this.engine = null;
@@ -68,7 +68,7 @@ class SearchModal {
       // Dynamically load the WASM engine if not available
       if (typeof SearchEngine === 'undefined') {
         const script = document.createElement('script');
-        script.src = '/wasm-search/SearchEngine.js';
+        script.src = '/wasm/SearchEngine.js';
         document.head.appendChild(script);
         await new Promise(resolve => {
           script.onload = resolve;
