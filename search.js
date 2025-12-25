@@ -68,7 +68,7 @@ class SearchModal {
       // Dynamically load the WASM engine if not available
       if (typeof SearchEngine === 'undefined') {
         const script = document.createElement('script');
-        script.src = '/wasm-search/search-zig.js';
+        script.src = '/wasm-search/SearchEngine.js';
         document.head.appendChild(script);
         await new Promise(resolve => {
           script.onload = resolve;
