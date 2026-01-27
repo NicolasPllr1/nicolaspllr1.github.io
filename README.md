@@ -20,11 +20,4 @@ live-server
 node convert.js
 ```
 
-TODO:
-
-- [ ] properly automate the 'post.md -> post.html' pipeline
-    - [x] slugs to power the search engine
-    - [ ] md image link --> <img> tags
-
-- better handling of code blocks
 
