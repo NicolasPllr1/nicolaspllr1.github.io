@@ -1,24 +1,21 @@
 My personal [blog](https://nicolaspllr1.github.io/)
 
-## Commands
+## Compiling posts
 
-Compiling tailwind --> css:
+Every command is in the `./Makefile`.
 
-```sh
-npx @tailwindcss/cli -i ./style.css -o ./output.css --watch
-```
+Currently, steps to go from raw Markdown to an HTML post are:
 
-Running the live server:
+1. Markdown text file --> HTML file with `make md2html` (Node script)
+2. Manually add tags for the header and footer
+3. Add slugs to headings with `make add-slugs <html-file>` (Python script)
+4. Re-build the search index, including the new post in the index corpus (see
+   [search](#search))
 
-```sh
-live-server
-```
+### Developement
 
-## Markdown --> HTML/CSS
-
-```sh
-node convert.js
-```
+- Launch the server (hot-reloads) with `make server`
+- Launch the tailwind compiler in --watch with `make css`
 
 ## Search
 
