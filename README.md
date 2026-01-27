@@ -1,4 +1,6 @@
-My personal [blog](https://nicolaspllr1.github.io/)
+# Personal Blog
+
+My personal [blog](https://nicolaspllr1.github.io/).
 
 ## Compiling posts
 
