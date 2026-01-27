@@ -252,7 +252,7 @@ let protocol_version = protocol_version.parse::<HttpVersion>()?;
 
 ### `Read` vs `BufRead`
 
-#### I/O in Rust - Read bs BufRead
+#### I/O in Rust - Read vs BufRead
 
 I/O operations in Rust have felt very different than I what experienced in other _higher-level_ language like Python. Rust does not hide the _many_ different ways in which you can carry read/write operations.
 

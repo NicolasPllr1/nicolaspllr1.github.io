@@ -14,7 +14,7 @@
   "13": {"link": "/posts/http-server-rust/index.html#reading-from-tcpstream", "title": "Reading from `TcpStream`"},
   "14": {"link": "/posts/http-server-rust/index.html#difficulty-no-eof-marker-in-headers", "title": "Difficulty: No EOF marker in headers"},
   "15": {"link": "/posts/http-server-rust/index.html#read-vs-bufread", "title": "`Read` vs `BufRead`"},
-  "16": {"link": "/posts/http-server-rust/index.html#io-in-rust-read-bs-bufread", "title": "I/O in Rust - Read bs BufRead"},
+  "16": {"link": "/posts/http-server-rust/index.html#io-in-rust-read-vs-bufread", "title": "I/O in Rust - Read vs BufRead"},
   "17": {"link": "/posts/http-server-rust/index.html#toy-benchmark", "title": "Toy Benchmark"},
   "18": {"link": "/posts/http-server-rust/index.html#practical-examples-from-my-http-server", "title": "Practical Examples from my HTTP Server"},
   "19": {"link": "/posts/http-server-rust/index.html#constructing-responses", "title": "Constructing Responses"},
