@@ -20,9 +20,9 @@ live-server
 node convert.js
 ```
 
-TODO:
+## Search
 
-- better handling of code blocks
-- add syntaxt highlighting
-
-- md image link --> <img> tags
+The keyword search engine ([code](https://github.com/NicolasPllr1/kwsearch)) is
+implemented in Zig and compiled to WASM. The WASM assets (a serialized index, a
+JSON metadata file, and a WASM binary) are in the `./wasm/` dir alongside the glue
+javascript code in `./wasm/SearchEngine.js`.

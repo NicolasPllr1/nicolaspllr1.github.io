@@ -1,142 +1,227 @@
-// TODO: fetch this based on the site pages / content, automatically
-// like: the home and reading list pages, and iterate over all posts content
-const searchableContent = [
-  {
-    title: 'Home Page',
-    content: 'Welcome to my personal website.',
-    url: '/',
-  },
-  {
-    title: 'Easy Intro to Networks and the Internet',
-    content:
-      'http, tcp, udp, networks, internet, protocols, layers, interfaces, physical, link, transport, network, application, smtp, dns',
-    url: 'posts/networks-intro/post.html',
-  },
-  {
-    title: 'Mini http/1.1 server (in rust)',
-    content: 'http, tcp, server, rust, programming, codecrafters, projects',
-    url: 'posts/http-server-rust/post.html',
-  },
-  {
-    title: 'Python type hints and complex Pydantic rebuilds',
-    content: 'python, types, type hints, pep, pydantic, models, rebuild, init, __init__, forward references, future statement, circular imports',
-    url: 'posts/python-type-hints-and-pydantic-rebuilds/post.html',
-  },
-]
+/**
+ * SearchModal - Unified search module
+ * Encapsulates WASM engine initialization, modal UI, and search logic
+ */
+class SearchModal {
+  constructor(config = {}) {
+    this.config = {
+      wasmPath: config.wasmPath || '/wasm/search.wasm',
+      indexPath: config.indexPath || '/wasm/search-index.bin',
+      mappingsPath: config.mappingsPath || '/wasm/docs-mapping.json',
+    };
 
-const searchModal = document.getElementById('search-modal')
-const searchInput = document.getElementById('search-input')
-const resultsContainer = document.getElementById('search-results')
+    this.engine = null;
+    this.isInitialized = false;
+    this.isInitializing = false;
 
-// Show search modal with Cmd+K or Ctrl+K shortcut
-document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    openSearchModal()
-  }
+    // DOM elements
+    this.modal = document.getElementById('search-modal');
+    this.input = document.getElementById('search-input');
+    this.resultsContainer = document.getElementById('search-results');
+    this.backdrop = document.getElementById('search-backdrop');
 
-  if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
-    closeSearchModal()
-  }
-})
-
-// Also make the "cmd+k" text in nav clickable
-document.querySelector('nav p').addEventListener('click', openSearchModal)
-
-function openSearchModal() {
-  searchModal.classList.remove('hidden')
-  searchModal.classList.add('flex')
-  searchInput.focus()
-  // document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
-}
-
-function closeSearchModal() {
-  searchModal.classList.add('hidden')
-  searchModal.classList.remove('flex')
-  searchInput.value = ''
-  resultsContainer.innerHTML = ''
-  // document.body.style.overflow = '';
-}
-// Close when clicking on the backdrop
-document
-  .getElementById('search-backdrop')
-  .addEventListener('click', closeSearchModal)
-// Close when clicking outside the modal content
-searchModal.addEventListener('click', (e) => {
-  if (e.target === searchModal) {
-    closeSearchModal()
-  }
-})
-
-// Perform fuzzy search as user types
-searchInput.addEventListener('input', performSearch)
-
-function performSearch() {
-  const query = searchInput.value.toLowerCase().trim()
-  resultsContainer.innerHTML = ''
-
-  if (!query) return
-
-  // Simple fuzzy search implementation
-  const results = searchableContent.filter((item) => {
-    const titleMatch = item.title.toLowerCase().includes(query)
-    const contentMatch = item.content.toLowerCase().includes(query)
-    return titleMatch || contentMatch
-  })
-
-  if (results.length === 0) {
-    resultsContainer.innerHTML =
-      '<div class="p-4 text-gray-400">No results found</div>'
-    return
-  }
-
-  // Create and display search results
-  results.forEach((result) => {
-    const resultElement = document.createElement('a')
-    resultElement.href = result.url
-    resultElement.classList.add(
-      'block',
-      'p-4',
-      'hover:bg-gray-700',
-      'border-b',
-      'border-gray-700'
-    )
-
-    // Highlight matching parts (simple implementation)
-    let title = result.title
-    let content = result.content
-
-    if (result.title.toLowerCase().includes(query)) {
-      const index = result.title.toLowerCase().indexOf(query)
-      title =
-        result.title.substring(0, index) +
-        `<span class="bg-blue-800">${result.title.substring(index, index + query.length)}</span>` +
-        result.title.substring(index + query.length)
+    if (!this.modal || !this.input || !this.resultsContainer) {
+      console.error('SearchModal: Required DOM elements not found');
+      return;
     }
 
-    if (result.content.toLowerCase().includes(query)) {
-      const index = result.content.toLowerCase().indexOf(query)
-      const start = Math.max(0, index - 20)
-      const snippet = result.content.substring(start, index + query.length + 30)
-      content =
-        (start > 0 ? '...' : '') +
-        snippet.substring(0, index - start) +
-        `<span class="bg-blue-800">${snippet.substring(index - start, index - start + query.length)}</span>` +
-        snippet.substring(index - start + query.length) +
-        (index + query.length + 30 < result.content.length ? '...' : '')
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+    // Cmd+K text in nav
+    const navText = document.querySelector('nav p');
+    if (navText) {
+      navText.addEventListener('click', () => this.open());
     }
 
-    resultElement.innerHTML = `
-<div class="font-medium">${title}</div>
-<div class="text-sm text-gray-400 mt-1">${content}</div>
-`
+    // Search input
+    this.input.addEventListener('keydown', (e) => {
+      // TODO: switch on the current token
+      // If it's a LOGIC symbol (i.e. ∧) deleted it and the whitespace so we get right to the previous keyword
+      // if it's a letter from a keyword, just delete it
+      // ALSO: handle cursor positioning so that after the deletion, the curor is NOT send to the end of the field
+      const pos = this.input.selectionStart
+      const query = this.input.value
+      if (e.key === 'Backspace') {
+        // check if query: "... ∧POS..."
+        if (query.length > 0 && pos > 0 && query.slice(pos - 1) === '∧') {
+          // delete the whole symbol and preceding whitespace
+          const beforeCaret = query.slice(0, pos - 1)
+          const afterCaret = query.slice(pos)
+          this.input.value = beforeCaret + afterCaret
+        }
+        else if (query.length > 0 && pos > 1 && query.slice(pos - 2) === '∧ ') {
+          // delete the whole symbol and preceding whitespace
+          const beforeCaret = query.slice(0, pos - 2)
+          const afterCaret = query.slice(pos)
+          this.input.value = beforeCaret + afterCaret
+        }
+      }
+      if (e.key === ' ') {
+        // Add LOGIC token instead of just a whitespace
+        // for now there is only AND
+        this.input.value += " ∧"
+      }
+    });
 
-    resultElement.addEventListener('click', (e) => {
-      closeSearchModal()
-    })
+    this.input.addEventListener('input', () => {
+      const queryDisplay = this.input.value.toLowerCase().trim();
+      this.resultsContainer.innerHTML = '';
+      if (!queryDisplay) return;
 
-    resultsContainer.appendChild(resultElement)
-  })
+      // Display query with conjunction symbols
+      const keywords = queryDisplay.split(' ∧ ').filter(k => k.length > 0);
+      const query = keywords.join(' ')
+      this.search(query)
+
+    });
+
+    // Modal backdrop and outside clicks
+    this.backdrop.addEventListener('click', () => this.close());
+    this.modal.addEventListener('click', (e) => {
+      // NOTE: this v condition never fires true
+      // Why ? remove?
+      if (e.target === this.modal) this.close();
+    });
+  }
+
+  handleKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      this.open();
+    }
+
+    if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
+      this.close();
+    }
+  }
+
+  async initialize() {
+    if (this.isInitialized || this.isInitializing) {
+      // NOTE: useless ? tried to open/close quickly, doesn't fire. When is that expected to fire ?
+      return;
+    }
+
+    this.isInitializing = true;
+
+    try {
+      // Dynamically load the WASM engine if not available
+      if (typeof SearchEngine === 'undefined') {
+        const script = document.createElement('script');
+        script.src = '/wasm/SearchEngine.js';
+        document.head.appendChild(script);
+        await new Promise(resolve => {
+          script.onload = resolve;
+        });
+      }
+
+      this.engine = new SearchEngine();
+      await this.engine.initialize(
+        this.config.wasmPath,
+        this.config.indexPath,
+        this.config.mappingsPath
+      );
+
+      this.isInitialized = true;
+      console.log('Search modal initialized');
+
+      // If modal was opened before engine was ready, search now
+      if (!this.modal.classList.contains('hidden') && this.input.value) {
+        this.search();
+      }
+    } catch (error) {
+      console.error('Failed to initialize search modal:', error);
+      this.showError('Error loading search engine.');
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
+  open() {
+    this.modal.classList.remove('hidden');
+    this.modal.classList.add('flex');
+    this.input.focus();
+
+    // Initialize engine on first open
+    if (!this.isInitialized && !this.isInitializing) {
+      this.initialize();
+    }
+  }
+
+  close() {
+    this.modal.classList.add('hidden');
+    this.modal.classList.remove('flex');
+    this.input.value = '';
+    this.resultsContainer.innerHTML = '';
+  }
+
+  search(query) {
+    this.resultsContainer.innerHTML = '';
+
+    if (!query) return;
+
+    if (!this.isInitialized) {
+      this.showMessage('Search engine loading, please wait...');
+      return;
+    }
+
+    try {
+      const results = this.engine.search(query);
+
+      if (results.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'p-4 text-gray-400';
+        noResults.textContent = 'No results found';
+        this.resultsContainer.appendChild(noResults);
+        return;
+      }
+
+      this.displayResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      this.showError('An error occurred during search.');
+    }
+  }
+
+  displayResults(results) {
+    results.forEach((result) => {
+      const link = document.createElement('a');
+      link.href = result.link || '#';
+      link.classList.add(
+        'block',
+        'p-4',
+        'hover:bg-gray-700',
+        'border-b',
+        'border-gray-700'
+      );
+
+      const title = result.title ?? `Document ${result.docId}`;
+      link.innerHTML = `<div class="font-medium">${title}</div>`;
+
+      link.addEventListener('click', () => this.close());
+
+      this.resultsContainer.appendChild(link);
+    });
+  }
+
+  showMessage(message) {
+    this.resultsContainer.innerHTML = `<div class="p-4 text-gray-400">${message}</div>`;
+  }
+
+  showError(message) {
+    this.resultsContainer.innerHTML = `<div class="p-4 text-red-400">${message}</div>`;
+  }
 }
 
-// Future enhancement: Use a proper fuzzy search library like Fuse.js for better results
+// Auto-initialize on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.searchModal = new SearchModal();
+  });
+} else {
+  window.searchModal = new SearchModal();
+}
