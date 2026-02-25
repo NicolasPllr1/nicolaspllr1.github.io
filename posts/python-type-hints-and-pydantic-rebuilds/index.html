@@ -1690,19 +1690,30 @@
     </main>
 
     <footer class="py-10 text-xl">
-      <nav class="flex flex-row px-4 py-2 justify-center bg-accent">
+      <nav
+        class="flex items-center justify-between px-4 py-2 bg-accent relative"
+      >
+        <!-- Left spacer to balance the center -->
+        <div class="w-8 h-10"></div>
+
+        <!-- Centered Links -->
         <ul class="flex space-x-4">
           <li class="hover:text-neutral-200 transition duration-100 ease">
-            <a href="https://github.com/NicolasPllr1" target="_blank">
-              github
-            </a>
+            <a href="https://github.com/NicolasPllr1" target="_blank">github</a>
           </li>
           <li class="hover:text-neutral-200 transition duration-100 ease">
-            <a href="https://x.com/nicolas_clark2" target="_blank">
-              x/twitter
-            </a>
+            <a href="https://x.com/nicolas_clark2" target="_blank">x/twitter</a>
           </li>
         </ul>
+
+        <!-- RC logo on the right -->
+        <div class="w-8 h-10 overflow-hidden shrink-0">
+          <div
+            class="rc-scout"
+            style="transform: scale(0.27)"
+          ></div>
+        </div>
+
       </nav>
     </footer>
 
@@ -1749,6 +1760,7 @@
         </div>
       </div>
     </div>
+    <script async defer src="https://www.recurse-scout.com/loader.js?t=47b768b3479fd1f670c37b5137844a0c"></script>
     <script src="/search.js"></script>
   </body>
 </html>
