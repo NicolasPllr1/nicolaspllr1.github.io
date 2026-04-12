@@ -13,22 +13,16 @@
     <header class="py-10">
       <nav class="flex flex-row px-4 py-2 justify-between text-xl bg-bg-subtle">
         <ul class="flex space-x-4 items-center">
-          <li
-            class="hover:text-neutral-200 transition duration-100 ease"
-          >
+          <li class="hover:text-neutral-200 transition duration-100 ease">
             <a href="/"> home </a>
           </li>
-          <li
-            class="hover:text-neutral-200 transition duration-100 ease"
-          >
-            <a href="./blog.html" class=""> writes </a>
-          </li>
-          <li
-            class="hover:text-neutral-200 transition duration-100 ease"
-          >
-            <a href="./reading_list.html" class="underline underline-offset-2">
-              reads
+          <li class="hover:text-neutral-200 transition duration-100 ease">
+            <a href="/writing" class="underline underline-offset-2">
+              writes
             </a>
+          </li>
+          <li class="hover:text-neutral-200 transition duration-100 ease">
+            <a href="/reading" class=""> reads </a>
           </li>
         </ul>
         <p
@@ -40,7 +34,45 @@
     </header>
 
     <main class="grow justify-between">
-      <p>futur list of very good stuff</p>
+      <div class="space-y-4">
+        <div
+          onclick="location.href='./python-type-hints-and-pydantic-rebuilds'"
+          class="group cursor-pointer bg-bg-base p-4 rounded-xl hover:bg-neutral-900 border border-[#7aa2f7] hover:border-accent-h3 transition duration-100 ease-out"
+        >
+          <h3 class="text-2xl text-accent-h3 ml-2">
+            Python type hints and complex Pydantic rebuilds
+          </h3>
+          <p class="ml-2">
+            Rebuilding complex Pydantic models using __init__ files. With a
+            small tour of Python type system en-passant.
+          </p>
+        </div>
+
+        <div
+          onclick="location.href='./http-server-rust'"
+          class="group cursor-pointer bg-bg-base p-4 rounded-xl hover:bg-neutral-900 border border-[#7aa2f7] hover:border-accent-h3 transition duration-100 ease-out"
+        >
+          <h3 class="text-2xl text-accent-h3 ml-2">
+            Mini HTTP/1.1 Server (in Rust)
+          </h3>
+          <p class="ml-2">
+            I wrote an <em>almost</em> spec-compliant HTTP/1.1 server in Rust
+          </p>
+        </div>
+
+        <div
+          onclick="location.href='./networks-intro'"
+          class="group cursor-pointer bg-bg-base p-4 rounded-xl hover:bg-neutral-900 border border-[#7aa2f7] hover:border-accent-h3 transition duration-100 ease-out"
+        >
+          <h3 class="text-2xl text-accent-h3 ml-2">Intro to Networks</h3>
+          <p class="ml-2">
+            Before calling high-level APIs - Berkeley sockets style
+            <code>accept</code>, <code>send</code>/<code>recv</code>,
+            <code>connect</code>, ... - let's build our
+            <em>foundations</em> first.
+          </p>
+        </div>
+      </div>
     </main>
 
     <footer class="py-10 text-xl">
